@@ -7,30 +7,38 @@ ViaTerrena follows a modular, service-oriented architecture designed for scalabi
 ### 1. Presentation Layer (`src/screens`, `src/components`)
 - **Functional Components**: All UI is built using React functional components with TypeScript.
 - **Design Tokens**: Every visual element derives its styling from `src/constants/colors.ts` and `typography.ts`.
-- **Containers**: `ScreenContainer` provides a unified background and safe-area handling across all screens.
+- **Atomic Components**: Specialized components like `PulseRing` and `SOSButton` encapsulate complex animations and state-specific logic.
 
 ### 2. Logic Layer (`src/hooks`)
-- **Custom Hooks**: Encapsulate complex logic like location permission management (`useLocation`) and network monitoring (`useNetworkStatus`).
-- **Separation of Concerns**: Hooks communicate between the UI and the Services/Store layers.
+- **State Machines**: `useSOSTrigger` implements a multi-phase state machine (idle -> countdown -> executing -> done) to manage critical emergency sequences.
+- **Data Hooks**: `useNearbyServices` and `usePersonalContacts` bridge the gap between persistent storage and the UI.
 
 ### 3. State Layer (`src/store`)
-- **Zustand**: Lightweight, scalable state management.
-- **Persistence**: Using `persist` middleware to cache nearby services and user preferences in `AsyncStorage`, ensuring the app remains useful even when offline.
+- **Zustand**: Lightweight, scalable state management with selective persistence.
+- **Async Persistence**: Using `persist` middleware to store:
+  - Cached Nearby Services (for offline recovery)
+  - Personal Emergency Contacts (up to 5 entries)
+  - Last SOS Trigger history
 
 ### 4. Service Layer (`src/services`)
-- **Stateless Services**: Each service handles a specific domain (e.g., `placesService` handles Google API calls).
-- **Error Handling**: Every async operation is wrapped in try/catch blocks to prevent app crashes during network or API failures.
+- **Stateless Domain Services**: Each service handles a specific domain.
+  - `SOSService`: Orchestrates multi-channel alerts (Call, SMS, WhatsApp).
+  - `placesService`: Manages Google Places API integration and distance calculations.
+  - `emergencyNumbers`: Provides a local lookup for global emergency dialers.
 
 ## 📂 Folder Structure Detail
 ```
 src/
-├── components/   # Reusable UI elements (Pills, Cards, Banners)
-├── constants/    # Design system and category definitions
-├── data/         # Static JSON data (Emergency numbers, guides)
-├── hooks/        # React hooks for lifecycle logic
+├── components/   # Reusable UI elements (Pills, Cards, Banners, PulseRing)
+├── constants/    # Design system, category definitions, and themes
+├── data/         # Static JSON data (Emergency numbers)
+├── hooks/        # React hooks for lifecycle logic and SOS state
 ├── navigation/   # Root and feature navigation
-├── screens/      # Full-page screen components
-├── services/     # Pure logic and API wrappers
-├── store/        # Global state definitions
-└── utils/        # Mathematical and helper utilities
+├── screens/      # Full-page feature screens
+├── services/     # Domain-specific logic (SOS, Location, Places)
+├── store/        # Global state definitions (Zustand)
+└── utils/        # Helper utilities (Distance, Location Sharing)
 ```
+
+---
+*Updated: April 25, 2026*

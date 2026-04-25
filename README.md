@@ -1,27 +1,30 @@
 # ViaTerrena 🌍
 
-ViaTerrena is a React Native (Expo) mobile application designed to provide instant, location-aware access to emergency services during road accidents and emergencies.
+ViaTerrena is a premium React Native (Expo) mobile application designed to provide instant, location-aware access to emergency services and roadside assistance.
 
 ## 🚀 Key Features
-- **SOS Button**: One-tap access to primary emergency numbers (Police, Ambulance, Fire) based on your current country.
-- **Nearby Services**: Find the closest hospitals, towing services, mechanics, and showrooms using Google Places API.
-- **Offline Reliability**: Essential emergency numbers for over 20 countries are stored locally and accessible without an internet connection.
-- **Location Aware**: Automatically detects your country and coordinates to provide relevant local help.
+- **🚨 Advanced SOS Panic System**: One-tap trigger with a 3-second safety window, animated pulse rings, and automatic dialing of local emergency numbers (112, 100, 108, etc.).
+- **📍 Pro Map Integration**: Live map with custom themed markers for hospitals, police stations, and mechanical help.
+- **🔧 Vehicle Help Hub**: Specialized tabs for Towing, Tyre Repair, and Showrooms, pulling data from high-speed local caches.
+- **👤 Emergency Contacts**: Manage up to 5 personal contacts who receive your location via SMS and WhatsApp during an SOS trigger.
+- **🛰️ Location Sharing**: Instantly share a Google Maps link of your precise location with one tap.
+- **📶 Offline Reliability**: Pre-loaded emergency numbers for over 20 countries and local caching of nearby services.
 
 ## 🛠 Tech Stack
 - **Framework**: Expo (React Native) with TypeScript
-- **State Management**: Zustand (with Persistence)
+- **State Management**: Zustand (with Persistence via AsyncStorage)
 - **Navigation**: React Navigation (Bottom Tabs)
-- **Services**: Expo Location, Expo Network, Axios
-- **UI**: Vanilla React Native StyleSheet with a custom Design System
+- **Services**: Expo Location, Expo SMS, Google Places API
+- **UI**: Vanilla React Native StyleSheet with a Premium Design System
 
 ## 📁 Project Structure
-- `src/navigation`: App navigation logic
-- `src/screens`: Feature-specific screens (Home, SOS, Nearby, etc.)
-- `src/services`: Core logic for Location, Places API, and Emergency Numbers
+- `src/navigation`: App navigation and tab logic
+- `src/screens`: Feature-specific screens (Home, SOS, Nearby, Vehicle, Contacts)
+- `src/components`: Reusable premium components (SOSButton, ServiceCard, PulseRing)
+- `src/services`: Core logic for SOS, Location, and Places API
 - `src/store`: Global state management with Zustand
 - `src/constants`: Design tokens (Colors, Typography) and configuration
-- `docs/`: Detailed project documentation
+- `src/hooks`: Custom logic hooks (useSOSTrigger, useNearbyServices, useTheme)
 
 ## 🏁 Getting Started
 
@@ -40,11 +43,9 @@ ViaTerrena is a React Native (Expo) mobile application designed to provide insta
    ```
 
 ## 📖 Documentation
-Detailed documentation can be found in the [docs/](./docs) folder:
-- [Architecture & Design](./docs/ARCHITECTURE.md)
-- [Setup & Configuration](./docs/SETUP.md)
-- [Service Logic](./docs/SERVICES.md)
-- [API Configuration](./docs/API_KEYS.md)
+Detailed walkthroughs and task logs are available in the artifact directory:
+- `walkthrough.md`: Summary of recent feature implementations.
+- `task.md`: Checklist of completed work.
 
 ---
 Built with ❤️ for road safety.
