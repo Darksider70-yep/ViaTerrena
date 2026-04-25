@@ -17,6 +17,8 @@ interface AppState {
   // Cache
   cachedNearby: Record<ServiceCategory, NearbyPlace[]>;
   cacheTimestamp: number | null;
+  personalContacts: any[];
+  lastSOSTrigger: number | null;
 
   // Actions
   setUserCoords: (coords: { latitude: number; longitude: number }) => void;
@@ -26,6 +28,8 @@ interface AppState {
   setOnline: (online: boolean) => void;
   setCachedNearby: (category: ServiceCategory, places: NearbyPlace[]) => void;
   toggleDarkMode: () => void;
+  setPersonalContacts: (contacts: any[]) => void;
+  setLastSOSTrigger: (ts: number) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -47,6 +51,8 @@ export const useAppStore = create<AppState>()(
       },
       cacheTimestamp: null,
       isDarkMode: false,
+      personalContacts: [],
+      lastSOSTrigger: null,
 
       setUserCoords: (coords) => set({ userCoords: coords }),
       setCountryCode: (code) => set({ countryCode: code }),
@@ -62,6 +68,8 @@ export const useAppStore = create<AppState>()(
           cacheTimestamp: Date.now(),
         })),
       toggleDarkMode: () => set((state) => ({ isDarkMode: !state.isDarkMode })),
+      setPersonalContacts: (contacts) => set({ personalContacts: contacts }),
+      setLastSOSTrigger: (ts) => set({ lastSOSTrigger: ts }),
     }),
     {
       name: 'via-terrena-storage',
@@ -71,6 +79,8 @@ export const useAppStore = create<AppState>()(
         countryCode: state.countryCode,
         cacheTimestamp: state.cacheTimestamp,
         isDarkMode: state.isDarkMode,
+        personalContacts: state.personalContacts,
+        lastSOSTrigger: state.lastSOSTrigger,
       }),
     }
   )
