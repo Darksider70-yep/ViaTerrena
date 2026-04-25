@@ -25,6 +25,9 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "googlePlacesApiKey": "GOOGLE_PLACES_API_KEY"
     }
   }
 }

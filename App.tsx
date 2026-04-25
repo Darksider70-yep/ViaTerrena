@@ -1,20 +1,45 @@
+import React, { useEffect } from 'react';
+import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import RootNavigator from './src/navigation/RootNavigator';
+import { useLocation } from './src/hooks/useLocation';
+import { useNetworkStatus } from './src/hooks/useNetworkStatus';
+import { useAppStore } from './src/store/useAppStore';
+import { OfflineBanner } from './src/components/OfflineBanner';
 
-export default function App() {
+function AppContent() {
+  const { loading: locationLoading, countryCode, coords } = useLocation();
+  const { loading: networkLoading, isOnline } = useNetworkStatus();
+
+  useEffect(() => {
+    if (!locationLoading && !networkLoading) {
+      console.log(`[ViaTerrena] Initialized. Country Code: ${countryCode}. Online: ${isOnline}`);
+      
+      if (coords && isOnline) {
+         import('./src/services/placesService').then(({ fetchNearbyServices }) => {
+            console.log('[ViaTerrena] Running Day 1 Smoke Test fetchNearbyServices...');
+            fetchNearbyServices(coords.latitude, coords.longitude, 'hospital')
+              .then(res => {
+                console.log(`[ViaTerrena] Places API Result Count: ${res.length}`);
+                if (res.length > 0) {
+                  console.log('[ViaTerrena] First Place:', res[0].name, 'Dist:', res[0].distanceKm.toFixed(2), 'km');
+                }
+              })
+              .catch(err => console.error('[ViaTerrena] Places API Error:', err));
+         });
+      }
+    }
+  }, [locationLoading, networkLoading, coords, countryCode, isOnline]);
+
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
+    <NavigationContainer>
       <StatusBar style="auto" />
-    </View>
+      <OfflineBanner />
+      <RootNavigator />
+    </NavigationContainer>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+export default function App() {
+  return <AppContent />;
+}
