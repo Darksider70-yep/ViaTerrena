@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { requestLocationPermission, getCurrentLocation } from '../services/LocationService';
-import { detectCountryCode } from '../services/EmergencyNumbers';
+import { detectCountryCode } from '../services/emergencyNumbers';
 
 export function useLocation() {
   const { setUserCoords, setCountryCode, setLocationError, userCoords, countryCode, locationError } = useAppStore();

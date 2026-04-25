@@ -1,32 +1,22 @@
 import React from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../constants/colors';
 
 export default function VehicleHelpScreen() {
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Vehicle Help</Text>
-      <Text style={styles.subtitle}>Towing, repair, and showroom info will be here.</Text>
+    <SafeAreaView style={styles.safe}>
+      <View style={styles.container}>
+        <Text style={styles.title}>Vehicle Help</Text>
+        <Text style={styles.sub}>Towing, tyre repair, and showrooms nearby.</Text>
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: colors.textPrimary,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    marginTop: 8,
-  },
+  safe: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1, padding: 20 },
+  title: { fontSize: 24, fontWeight: '700', color: colors.textPrimary },
+  sub: { fontSize: 14, color: colors.textSecondary, marginTop: 8 },
 });

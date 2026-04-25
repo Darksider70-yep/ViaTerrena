@@ -1,45 +1,50 @@
 import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { StatusBar } from 'expo-status-bar';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { enableScreens } from 'react-native-screens';
+
 import RootNavigator from './src/navigation/RootNavigator';
 import { useLocation } from './src/hooks/useLocation';
 import { useNetworkStatus } from './src/hooks/useNetworkStatus';
-import { useAppStore } from './src/store/useAppStore';
-import { OfflineBanner } from './src/components/OfflineBanner';
+import { fetchNearbyServices } from './src/services/placesService';
+
+// Disable native screens to prevent RN 0.81 strict property casting crash
+enableScreens(false);
 
 function AppContent() {
-  const { loading: locationLoading, countryCode, coords } = useLocation();
-  const { loading: networkLoading, isOnline } = useNetworkStatus();
+  const { loading: locLoading, countryCode, coords } = useLocation();
+  const { isOnline } = useNetworkStatus();
 
   useEffect(() => {
-    if (!locationLoading && !networkLoading) {
-      console.log(`[ViaTerrena] Initialized. Country Code: ${countryCode}. Online: ${isOnline}`);
+    if (!locLoading) {
+      console.log('[ViaTerrena] Ready. Country:', countryCode, 'Online:', isOnline);
       
+      // Run the Day 1 Smoke Test if we have location and network
       if (coords && isOnline) {
-         import('./src/services/placesService').then(({ fetchNearbyServices }) => {
-            console.log('[ViaTerrena] Running Day 1 Smoke Test fetchNearbyServices...');
-            fetchNearbyServices(coords.latitude, coords.longitude, 'hospital')
-              .then(res => {
-                console.log(`[ViaTerrena] Places API Result Count: ${res.length}`);
-                if (res.length > 0) {
-                  console.log('[ViaTerrena] First Place:', res[0].name, 'Dist:', res[0].distanceKm.toFixed(2), 'km');
-                }
-              })
-              .catch(err => console.error('[ViaTerrena] Places API Error:', err));
-         });
+        console.log('[ViaTerrena] Running Day 1 Smoke Test fetchNearbyServices...');
+        fetchNearbyServices(coords.latitude, coords.longitude, 'hospital')
+          .then(res => {
+            console.log(`[ViaTerrena] Places API Result Count: ${res.length}`);
+            if (res.length > 0) {
+              console.log('[ViaTerrena] First Place:', res[0].name, 'Dist:', res[0].distanceKm.toFixed(2), 'km');
+            }
+          })
+          .catch(err => console.error('[ViaTerrena] Places API Error:', err));
       }
     }
-  }, [locationLoading, networkLoading, coords, countryCode, isOnline]);
+  }, [locLoading, countryCode, isOnline, coords]);
 
   return (
     <NavigationContainer>
-      <StatusBar style="auto" />
-      <OfflineBanner />
       <RootNavigator />
     </NavigationContainer>
   );
 }
 
 export default function App() {
-  return <AppContent />;
+  return (
+    <SafeAreaProvider>
+      <AppContent />
+    </SafeAreaProvider>
+  );
 }

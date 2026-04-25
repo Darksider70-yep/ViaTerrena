@@ -1,147 +1,140 @@
-import React, { useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, Animated, TouchableOpacity, Platform } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Platform, Linking, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { ScreenContainer } from '../components/ScreenContainer';
+import * as SMS from 'expo-sms';
 import { colors } from '../constants/colors';
-import { typography } from '../constants/typography';
-import { spacing } from '../constants/spacing';
 import { useAppStore } from '../store/useAppStore';
-import { getPrimaryEmergencyNumber } from '../services/EmergencyNumbers';
+import { getPrimaryEmergencyNumber } from '../services/emergencyNumbers';
 
 export default function SOSScreen() {
-  const countryCode = useAppStore((state) => state.countryCode);
-  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const countryCode = useAppStore((s) => s.countryCode);
+  const userCoords = useAppStore((s) => s.userCoords);
+  const pulse = useRef(new Animated.Value(1)).current;
+  
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const countdownRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    const pulse = Animated.loop(
+    const anim = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.2,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
+        Animated.timing(pulse, { toValue: 1.15, duration: 900, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 1, duration: 900, useNativeDriver: true }),
       ])
     );
-    pulse.start();
-    return () => pulse.stop();
-  }, []);
-
-  const handleSOSPress = () => {
-    if (Platform.OS !== 'web') {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    if (countdown === null) {
+      anim.start();
+    } else {
+      anim.stop();
+      pulse.setValue(1);
     }
+    return () => anim.stop();
+  }, [countdown]);
+
+  const executeEmergencyProtocol = async () => {
     const number = getPrimaryEmergencyNumber(countryCode);
-    console.log(`[ViaTerrena] SOS Triggered: Calling ${number}`);
-    // Linking.openURL(`tel:${number}`);
+    console.log('[ViaTerrena] Executing SOS. Calling:', number);
+    
+    // Attempt to send SMS if available
+    const isAvailable = await SMS.isAvailableAsync();
+    if (isAvailable && userCoords) {
+      const mapsLink = `https://maps.google.com/?q=${userCoords.latitude},${userCoords.longitude}`;
+      const message = `EMERGENCY! I need help. My current location is: ${mapsLink}`;
+      // Note: we don't await this so the call can happen immediately, but on mobile SMS opens a composer
+      SMS.sendSMSAsync([], message).catch(console.error);
+    }
+    
+    // Trigger Phone Call
+    Linking.openURL(`tel:${number}`).catch((err) => {
+      console.error('[ViaTerrena] Error opening dialer', err);
+      Alert.alert('Error', `Could not open dialer for ${number}`);
+    });
   };
 
+  const handlePress = () => {
+    if (Platform.OS !== 'web') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    }
+
+    if (countdown !== null) {
+      // Cancel
+      if (countdownRef.current) clearInterval(countdownRef.current);
+      setCountdown(null);
+      if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } else {
+      // Start Countdown
+      setCountdown(3);
+      let count = 3;
+      countdownRef.current = setInterval(() => {
+        count -= 1;
+        if (count > 0) {
+          setCountdown(count);
+          if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+        } else {
+          if (countdownRef.current) clearInterval(countdownRef.current);
+          setCountdown(null);
+          executeEmergencyProtocol();
+        }
+      }, 1000);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (countdownRef.current) clearInterval(countdownRef.current);
+    };
+  }, []);
+
   return (
-    <ScreenContainer style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.emergencyLabel}>EMERGENCY HELP</Text>
-        <Text style={styles.countryLabel}>Location Detected: {countryCode}</Text>
-      </View>
-
-      <View style={styles.centerContent}>
-        <Animated.View 
-          style={[
-            styles.pulseCircle, 
-            { transform: [{ scale: pulseAnim }] }
-          ]} 
-        />
-        <TouchableOpacity 
-          style={styles.sosButton} 
-          onPress={handleSOSPress}
-          activeOpacity={0.9}
-        >
-          <Text style={styles.sosText}>SOS</Text>
-          <Text style={styles.sosSubtext}>Tap to Call</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>
-          Tapping the button will immediately call the primary emergency services for your region.
+    <SafeAreaView style={styles.safe}>
+      <View style={styles.container}>
+        <Text style={styles.label}>EMERGENCY</Text>
+        <Text style={styles.country}>{countryCode}</Text>
+        <View style={styles.pulseWrapper}>
+          <Animated.View style={[styles.pulse, { transform: [{ scale: pulse }] }]} />
+          <TouchableOpacity 
+            style={[styles.button, countdown !== null && styles.buttonActive]} 
+            onPress={handlePress} 
+            activeOpacity={0.85}
+          >
+            {countdown !== null ? (
+              <>
+                <Text style={styles.sos}>{countdown}</Text>
+                <Text style={styles.tap}>Tap to Cancel</Text>
+              </>
+            ) : (
+              <>
+                <Text style={styles.sos}>SOS</Text>
+                <Text style={styles.tap}>Tap to Call</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.hint}>
+          {countdown !== null 
+            ? 'Emergency protocol initiated. Press again to abort.' 
+            : 'Immediately calls your region\'s primary emergency service.'}
         </Text>
       </View>
-    </ScreenContainer>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: spacing.xl,
-    justifyContent: 'space-between',
-    paddingVertical: spacing.xxl,
+  safe: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  label: { fontSize: 12, fontWeight: '700', color: colors.primary, marginBottom: 4 },
+  country: { fontSize: 16, fontWeight: '500', color: colors.textSecondary, marginBottom: 40 },
+  pulseWrapper: { alignItems: 'center', justifyContent: 'center', marginBottom: 40 },
+  pulse: {
+    position: 'absolute', width: 200, height: 200, borderRadius: 100, backgroundColor: colors.sosPulse,
   },
-  header: {
-    alignItems: 'center',
-    marginTop: spacing.xl,
+  button: {
+    width: 180, height: 180, borderRadius: 90, backgroundColor: colors.primary,
+    alignItems: 'center', justifyContent: 'center', borderWidth: 6, borderColor: 'rgba(255,255,255,0.3)',
   },
-  emergencyLabel: {
-    fontSize: typography.sizes.sm,
-    fontWeight: '700',
-    color: colors.primary,
-    letterSpacing: 2,
-    marginBottom: spacing.xs,
-  },
-  countryLabel: {
-    fontSize: typography.sizes.md,
-    color: colors.textSecondary,
-    fontWeight: '500',
-  },
-  centerContent: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pulseCircle: {
-    position: 'absolute',
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: colors.sosPulse,
-  },
-  sosButton: {
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.5,
-    shadowRadius: 20,
-    elevation: 15,
-    borderWidth: 8,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  sosText: {
-    fontSize: 48,
-    fontWeight: '900',
-    color: '#FFFFFF',
-    letterSpacing: typography.letterSpacing.wide,
-  },
-  sosSubtext: {
-    fontSize: typography.sizes.sm,
-    fontWeight: '600',
-    color: 'rgba(255, 255, 255, 0.8)',
-    marginTop: -4,
-  },
-  footer: {
-    alignItems: 'center',
-    marginBottom: spacing.xl,
-  },
-  footerText: {
-    fontSize: typography.sizes.sm,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 20,
-    opacity: 0.7,
-  },
+  buttonActive: { backgroundColor: colors.danger },
+  sos: { fontSize: 52, fontWeight: '900', color: '#fff' },
+  tap: { fontSize: 13, color: 'rgba(255,255,255,0.8)', marginTop: -4 },
+  hint: { fontSize: 13, color: colors.textSecondary, textAlign: 'center', opacity: 0.7 },
 });

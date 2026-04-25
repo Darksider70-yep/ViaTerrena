@@ -1,34 +1,26 @@
-import { useEffect, useState } from 'react';
-import * as Network from 'expo-network';
+import { useEffect } from 'react';
+import NetInfo from '@react-native-community/netinfo';
 import { useAppStore } from '../store/useAppStore';
 
-export function useNetworkStatus() {
-  const { isOnline, setOnline } = useAppStore();
-  const [loading, setLoading] = useState(true);
+export function useNetworkStatus(): { isOnline: boolean } {
+  const isOnline = useAppStore((state) => state.isOnline);
+  const setOnline = useAppStore((state) => state.setOnline);
 
   useEffect(() => {
-    let mounted = true;
+    // Subscription to NetInfo
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      setOnline(!!state.isConnected);
+    });
 
-    async function checkNetwork() {
-      try {
-        const state = await Network.getNetworkStateAsync();
-        if (mounted) {
-          const isConnected = !!state.isConnected && !!state.isInternetReachable;
-          setOnline(isConnected);
-          setLoading(false);
-        }
-      } catch (error) {
-        console.error('[ViaTerrena] Network check error', error);
-        if (mounted) setLoading(false);
-      }
-    }
-
-    checkNetwork();
+    // Initial check on mount
+    NetInfo.fetch().then((state) => {
+      setOnline(!!state.isConnected);
+    });
 
     return () => {
-      mounted = false;
+      unsubscribe();
     };
-  }, []);
+  }, [setOnline]);
 
-  return { isOnline, loading };
+  return { isOnline };
 }

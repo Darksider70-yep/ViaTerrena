@@ -62,7 +62,6 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.h2,
     fontWeight: '700',
     color: colors.textPrimary,
-    letterSpacing: typography.letterSpacing.tight,
   },
   subtitle: {
     fontSize: typography.sizes.sm,

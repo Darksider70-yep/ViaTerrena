@@ -1,10 +1,9 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, StyleSheet, Platform, Text } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { colors } from '../constants/colors';
-import { typography } from '../constants/typography';
+import { useTheme } from '../hooks/useTheme';
 
 import HomeScreen from '../screens/HomeScreen';
 import NearbyScreen from '../screens/NearbyScreen';
@@ -15,16 +14,13 @@ import ContactsScreen from '../screens/ContactsScreen';
 const Tab = createBottomTabNavigator();
 
 export default function RootNavigator() {
-  const handleTabPress = () => {
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-  };
+  const { theme, colors, isDarkMode } = useTheme();
 
-  const handleSOSPress = () => {
-    if (Platform.OS !== 'web') {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-    }
+  const light = () => {
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+  const warn = () => {
+    if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
   };
 
   return (
@@ -32,76 +28,66 @@ export default function RootNavigator() {
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.secondary,
-        tabBarInactiveTintColor: colors.textHint,
-        tabBarLabelStyle: {
-          fontSize: 10,
-          fontWeight: '600',
-          marginBottom: Platform.OS === 'ios' ? 0 : 4,
-        },
-        tabBarStyle: {
-          backgroundColor: '#FFFFFF',
-          borderTopWidth: 1,
-          borderTopColor: colors.divider,
-          height: Platform.OS === 'ios' ? 88 : 64,
-          paddingTop: 8,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.05,
-          shadowRadius: 10,
-          elevation: 10,
-        },
+        tabBarInactiveTintColor: theme.textHint,
+        tabBarStyle: [
+          styles.tabBar, 
+          { 
+            backgroundColor: theme.surface, 
+            borderTopColor: theme.border 
+          }
+        ],
       }}
     >
       <Tab.Screen
         name="Home"
         component={HomeScreen}
-        listeners={{ tabPress: handleTabPress }}
+        listeners={{ tabPress: light }}
         options={{
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? "home" : "home-outline"} size={24} color={color} />
+            <Ionicons name={focused ? 'home' : 'home-outline'} size={24} color={color} />
           ),
         }}
       />
       <Tab.Screen
         name="Nearby"
         component={NearbyScreen}
-        listeners={{ tabPress: handleTabPress }}
+        listeners={{ tabPress: light }}
         options={{
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? "location" : "location-outline"} size={24} color={color} />
+            <Ionicons name={focused ? 'location' : 'location-outline'} size={24} color={color} />
           ),
         }}
       />
       <Tab.Screen
         name="SOS"
         component={SOSScreen}
-        listeners={{ tabPress: handleSOSPress }}
+        listeners={{ tabPress: warn }}
         options={{
-          tabBarIcon: ({ focused }) => (
-            <View style={styles.sosTabContainer}>
+          tabBarLabel: '',
+          tabBarIcon: () => (
+            <View style={[styles.sosButton, { backgroundColor: colors.primary, borderColor: theme.surface }]}>
               <Ionicons name="alert-circle" size={32} color="#FFFFFF" />
             </View>
           ),
-          tabBarLabel: () => null,
         }}
       />
       <Tab.Screen
         name="Vehicle"
         component={VehicleHelpScreen}
-        listeners={{ tabPress: handleTabPress }}
+        listeners={{ tabPress: light }}
         options={{
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? "car" : "car-outline"} size={24} color={color} />
+            <Ionicons name={focused ? 'car' : 'car-outline'} size={24} color={color} />
           ),
         }}
       />
       <Tab.Screen
         name="Contacts"
         component={ContactsScreen}
-        listeners={{ tabPress: handleTabPress }}
+        listeners={{ tabPress: light }}
         options={{
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? "people" : "people-outline"} size={24} color={color} />
+            <Ionicons name={focused ? 'people' : 'people-outline'} size={24} color={color} />
           ),
         }}
       />
@@ -110,20 +96,23 @@ export default function RootNavigator() {
 }
 
 const styles = StyleSheet.create({
-  sosTabContainer: {
+  tabBar: {
+    borderTopWidth: 1,
+    height: Platform.OS === 'ios' ? 88 : 64,
+    paddingTop: 8,
+  },
+  sosButton: {
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: Platform.OS === 'ios' ? 35 : 25,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 12,
+    marginBottom: Platform.OS === 'ios' ? 34 : 24,
     borderWidth: 4,
-    borderColor: '#FFFFFF',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
   },
 });

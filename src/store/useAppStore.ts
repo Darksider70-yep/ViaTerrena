@@ -12,6 +12,7 @@ interface AppState {
   // UI state
   selectedCategory: ServiceCategory | 'all';
   isOnline: boolean;
+  isDarkMode: boolean;
 
   // Cache
   cachedNearby: Record<ServiceCategory, NearbyPlace[]>;
@@ -24,6 +25,7 @@ interface AppState {
   setSelectedCategory: (cat: ServiceCategory | 'all') => void;
   setOnline: (online: boolean) => void;
   setCachedNearby: (category: ServiceCategory, places: NearbyPlace[]) => void;
+  toggleDarkMode: () => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -44,6 +46,7 @@ export const useAppStore = create<AppState>()(
         pharmacy: [],
       },
       cacheTimestamp: null,
+      isDarkMode: false,
 
       setUserCoords: (coords) => set({ userCoords: coords }),
       setCountryCode: (code) => set({ countryCode: code }),
@@ -58,6 +61,7 @@ export const useAppStore = create<AppState>()(
           },
           cacheTimestamp: Date.now(),
         })),
+      toggleDarkMode: () => set((state) => ({ isDarkMode: !state.isDarkMode })),
     }),
     {
       name: 'via-terrena-storage',
@@ -66,6 +70,7 @@ export const useAppStore = create<AppState>()(
         cachedNearby: state.cachedNearby,
         countryCode: state.countryCode,
         cacheTimestamp: state.cacheTimestamp,
+        isDarkMode: state.isDarkMode,
       }),
     }
   )

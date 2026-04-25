@@ -22,9 +22,4 @@ export const typography = {
     normal: 1.5,
     relaxed: 1.8,
   },
-  letterSpacing: {
-    tight: -0.5,
-    normal: 0,
-    wide: 0.5,
-  }
 };

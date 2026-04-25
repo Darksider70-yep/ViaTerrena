@@ -1,198 +1,322 @@
-import React from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { ScreenContainer } from '../components/ScreenContainer';
+import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  ScrollView,
+  Platform,
+  Linking,
+  ActivityIndicator,
+  Animated,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import MapView, { Marker, Callout } from 'react-native-maps';
+import { useAppStore } from '../store/useAppStore';
+import { useNearbyServices } from '../hooks/useNearbyServices';
+import { useNetworkStatus } from '../hooks/useNetworkStatus';
+import { SERVICE_CATEGORIES } from '../constants/serviceCategories';
 import { CategoryPill } from '../components/CategoryPill';
 import { ServiceCard } from '../components/ServiceCard';
-import { colors } from '../constants/colors';
-import { typography } from '../constants/typography';
-import { spacing } from '../constants/spacing';
-import { SERVICE_CATEGORIES } from '../constants/serviceCategories';
-import { useAppStore } from '../store/useAppStore';
+import { OfflineBanner } from '../components/OfflineBanner';
+import { ResultsCountBadge } from '../components/ResultsCountBadge';
+import { NearbyPlace } from '../services/placesService';
+import { useTheme } from '../hooks/useTheme';
+
+const RADIUS_OPTIONS = [
+  { label: '5km', value: 5000 },
+  { label: '10km', value: 10000 },
+  { label: '25km', value: 25000 },
+];
+
+import { CustomMapView } from '../components/MapView';
+import { ServiceListItem } from '../components/ServiceListItem';
 
 export default function NearbyScreen() {
-  const selectedCategory = useAppStore((state) => state.selectedCategory);
-  const setSelectedCategory = useAppStore((state) => state.setSelectedCategory);
-  const cachedNearby = useAppStore((state) => state.cachedNearby);
+  const { userCoords, selectedCategory, setSelectedCategory, cacheTimestamp } = useAppStore();
+  const [radiusMeters, setRadiusMeters] = useState(10000);
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const flashAnim = useRef(new Animated.Value(0)).current;
 
-  const displayPlaces = selectedCategory === 'all' 
-    ? [] // Just for shell
-    : cachedNearby[selectedCategory] || [];
+  const { theme, isDarkMode, colors } = useTheme();
+  const { isOnline } = useNetworkStatus();
+  const {
+    places,
+    loading,
+    refresh,
+    isFromCache,
+    totalCount,
+  } = useNearbyServices(radiusMeters);
 
-  return (
-    <ScreenContainer edges={['top']}>
-      <View style={styles.searchHeader}>
-        <View style={styles.searchBar}>
-          <Ionicons name="search" size={20} color={colors.textHint} />
-          <TextInput 
-            style={styles.searchInput} 
-            placeholder="Search emergency services..." 
-            placeholderTextColor={colors.textHint}
-          />
+  const mapRef = useRef<MapView>(null);
+  const listRef = useRef<FlatList>(null);
+
+  const PROMPT_CATEGORY_COLORS: Record<string, string> = {
+    hospital: colors.hospital,
+    ambulance: colors.ambulance,
+    police: colors.police,
+    towing: colors.towing,
+    puncture_shop: colors.puncture,
+    showroom: colors.showroom,
+  };
+
+  const getMarkerColor = useCallback((category: string) => {
+    return PROMPT_CATEGORY_COLORS[category] || colors.primary;
+  }, [colors]);
+
+  const handleCall = useCallback((phone: string) => {
+    Linking.openURL(`tel:${phone}`);
+  }, []);
+
+  const handleDirections = useCallback((place: NearbyPlace) => {
+    const url = Platform.select({
+      ios: `maps:?daddr=${place.latitude},${place.longitude}`,
+      android: `google.navigation:q=${place.latitude},${place.longitude}`,
+    });
+    if (url) Linking.openURL(url);
+  }, []);
+
+  const handleMarkerCalloutPress = useCallback((place: NearbyPlace) => {
+    const index = places.findIndex(p => p.placeId === place.placeId);
+    if (index !== -1 && listRef.current) {
+      listRef.current.scrollToIndex({ index, animated: true });
+      
+      setHighlightedId(place.placeId);
+      Animated.sequence([
+        Animated.timing(flashAnim, { toValue: 1, duration: 100, useNativeDriver: false }),
+        Animated.timing(flashAnim, { toValue: 0, duration: 400, useNativeDriver: false }),
+      ]).start(() => setHighlightedId(null));
+    }
+  }, [places, flashAnim]);
+
+  const renderHeader = () => (
+    <View style={[styles.header, { backgroundColor: theme.surface }]}>
+      <View style={styles.headerTop}>
+        <View>
+          <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>Nearby Services</Text>
+          <Text style={[styles.headerSubtitle, { color: theme.textSecondary }]}>Finding help around you</Text>
+        </View>
+        <View style={[styles.radiusSelector, { backgroundColor: theme.background }]}>
+          {RADIUS_OPTIONS.map((opt) => (
+            <TouchableOpacity
+              key={opt.value}
+              onPress={() => setRadiusMeters(opt.value)}
+              style={[
+                styles.radiusBtn,
+                radiusMeters === opt.value && [styles.radiusBtnActive, { backgroundColor: theme.surface }],
+              ]}
+            >
+              <Text style={[
+                styles.radiusText,
+                { color: theme.textSecondary },
+                radiusMeters === opt.value && { color: theme.textPrimary }
+              ]}>
+                {opt.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
       </View>
 
-      <View style={styles.categoryContainer}>
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoryScroll}
-        >
-          <CategoryPill 
-            label="All" 
-            emoji="📍" 
-            active={selectedCategory === 'all'} 
-            onPress={() => setSelectedCategory('all')} 
+      <View style={styles.pillContainer}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pillScroll}>
+          <CategoryPill
+            category="all"
+            label="All"
+            emoji="🔍"
+            color={colors.textPrimary}
+            isSelected={selectedCategory === 'all'}
+            onPress={() => setSelectedCategory('all')}
           />
           {SERVICE_CATEGORIES.map((cat) => (
-            <CategoryPill 
+            <CategoryPill
               key={cat.id}
-              label={cat.label} 
-              emoji={cat.emoji} 
-              active={selectedCategory === cat.id} 
+              category={cat.id as any}
+              label={cat.label}
+              emoji={cat.emoji}
+              color={cat.color}
+              isSelected={selectedCategory === cat.id}
+              count={places.filter(p => p.category === cat.id).length}
               onPress={() => setSelectedCategory(cat.id as any)}
-              activeColor={cat.color}
             />
           ))}
         </ScrollView>
       </View>
+    </View>
+  );
 
-      <View style={styles.mapPlaceholder}>
-        <Ionicons name="map-outline" size={48} color={colors.textHint} />
-        <Text style={styles.mapText}>Map visualization will appear here</Text>
-        <View style={styles.mapOverlay}>
-          <TouchableOpacity style={styles.mapAction}>
-            <Ionicons name="locate" size={24} color={colors.textPrimary} />
-          </TouchableOpacity>
+  if (!userCoords) {
+    return (
+      <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.loadingText, { color: theme.textSecondary }]}>Locating you...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]} edges={['top']}>
+      {renderHeader()}
+      
+      <OfflineBanner isFromCache={isFromCache} cacheTimestamp={cacheTimestamp} />
+      
+      <View style={[styles.mapContainer, { backgroundColor: theme.background }]}>
+        <CustomMapView
+          ref={mapRef}
+          places={places}
+          getMarkerColor={getMarkerColor}
+          onMarkerCalloutPress={handleMarkerCalloutPress}
+          initialRegion={{
+            latitude: userCoords.latitude,
+            longitude: userCoords.longitude,
+            latitudeDelta: 0.05,
+            longitudeDelta: 0.05,
+          }}
+          userInterfaceStyle={isDarkMode ? 'dark' : 'light'}
+        />
+        <View style={styles.badgeWrapper}>
+          <ResultsCountBadge totalCount={totalCount} loading={loading} />
         </View>
       </View>
 
-      <View style={styles.resultsHeader}>
-        <Text style={styles.resultsTitle}>
-          {selectedCategory === 'all' ? 'Nearby Services' : `${selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1).replace('_', ' ')}s Near You`}
-        </Text>
-        <TouchableOpacity>
-          <Text style={styles.viewAll}>Filter</Text>
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView 
-        style={styles.resultsList}
-        contentContainerStyle={styles.resultsContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {displayPlaces.length > 0 ? (
-          displayPlaces.map((place) => (
-            <ServiceCard key={place.placeId} place={place} />
-          ))
-        ) : (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>Select a category above to find help near you.</Text>
-          </View>
+      <FlatList
+        ref={listRef}
+        data={places}
+        keyExtractor={(item) => item.placeId}
+        renderItem={({ item }) => (
+          <ServiceListItem
+            place={item}
+            onCallPress={handleCall}
+            onDirectionsPress={handleDirections}
+            highlightedId={highlightedId}
+            flashAnim={flashAnim}
+            onPress={(p) => {
+              mapRef.current?.animateToRegion({
+                latitude: p.latitude,
+                longitude: p.longitude,
+                latitudeDelta: 0.01,
+                longitudeDelta: 0.01,
+              });
+            }}
+          />
         )}
-      </ScrollView>
-    </ScreenContainer>
+        initialNumToRender={8}
+        maxToRenderPerBatch={10}
+        windowSize={5}
+        removeClippedSubviews={Platform.OS === 'android'}
+        contentContainerStyle={styles.listContent}
+        ListEmptyComponent={
+          !loading ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyEmoji}>🔍</Text>
+              <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>No services found nearby</Text>
+              <Text style={[styles.emptySub, { color: theme.textSecondary }]}>Try increasing the search radius</Text>
+              <TouchableOpacity style={[styles.retryBtn, { backgroundColor: colors.primary }]} onPress={refresh}>
+                <Text style={styles.retryText}>Retry</Text>
+              </TouchableOpacity>
+            </View>
+          ) : null
+        }
+        ListFooterComponent={loading ? <ActivityIndicator style={{ margin: 20 }} color={colors.primary} /> : null}
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  searchHeader: {
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.sm,
+  safe: { flex: 1 },
+  header: {
+    paddingVertical: 16,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+    zIndex: 10,
   },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    paddingHorizontal: spacing.md,
-    height: 48,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: colors.divider,
-  },
-  searchInput: {
-    flex: 1,
-    marginLeft: spacing.sm,
-    fontSize: 16,
-    color: colors.textPrimary,
-  },
-  categoryContainer: {
-    paddingVertical: spacing.sm,
-  },
-  categoryScroll: {
-    paddingHorizontal: spacing.md,
-  },
-  mapPlaceholder: {
-    height: 200,
-    backgroundColor: '#E8EAED',
-    marginHorizontal: spacing.md,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.lg,
-    overflow: 'hidden',
-  },
-  mapText: {
-    marginTop: spacing.sm,
-    color: colors.textSecondary,
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  mapOverlay: {
-    position: 'absolute',
-    bottom: spacing.sm,
-    right: spacing.sm,
-  },
-  mapAction: {
-    backgroundColor: '#FFFFFF',
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  resultsHeader: {
+  headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    marginBottom: spacing.sm,
+    paddingHorizontal: 24,
+    marginBottom: 16,
   },
-  resultsTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.textPrimary,
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: '900',
+    letterSpacing: -1,
   },
-  viewAll: {
-    fontSize: 14,
-    color: colors.secondary,
+  headerSubtitle: {
+    fontSize: 13,
     fontWeight: '600',
+    marginTop: 2,
   },
-  resultsList: {
+  radiusSelector: {
+    flexDirection: 'row',
+    borderRadius: 12,
+    padding: 2,
+  },
+  radiusBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+  },
+  radiusBtnActive: {
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  radiusText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  pillContainer: {
+    paddingVertical: 4,
+  },
+  pillScroll: {
+    paddingHorizontal: 16,
+    paddingBottom: 4,
+  },
+  mapContainer: {
+    height: '26%',
+    width: '100%',
+    marginTop: -20,
+  },
+  badgeWrapper: {
+    position: 'absolute',
+    top: 12, // Move to top to avoid overlapping lake text
+    left: 12,
+    zIndex: 100,
+  },
+  listContent: {
+    padding: 16,
+    paddingTop: 24,
+    paddingBottom: 60,
+  },
+  loadingContainer: {
     flex: 1,
-  },
-  resultsContent: {
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.xl,
-  },
-  emptyState: {
     alignItems: 'center',
-    marginTop: spacing.xl,
+    justifyContent: 'center',
   },
-  emptyText: {
-    textAlign: 'center',
-    color: colors.textHint,
-    fontSize: 14,
+  loadingText: {
+    marginTop: 12,
+    fontSize: 15,
+    fontWeight: '500',
   },
+  emptyContainer: {
+    alignItems: 'center',
+    paddingTop: 80,
+  },
+  emptyEmoji: { fontSize: 48, marginBottom: 16 },
+  emptyTitle: { fontSize: 18, fontWeight: '800' },
+  emptySub: { fontSize: 15, marginTop: 6, textAlign: 'center', paddingHorizontal: 40 },
+  retryBtn: {
+    marginTop: 24,
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+    borderRadius: 24,
+  },
+  retryText: { color: '#fff', fontWeight: '800', fontSize: 15 },
 });

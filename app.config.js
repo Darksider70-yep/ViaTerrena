@@ -1,11 +1,11 @@
-import 'dotenv/config';
+require('dotenv').config();
 
-export default ({ config }) => {
+module.exports = ({ config }) => {
   return {
     ...config,
     extra: {
       ...config.extra,
-      googlePlacesApiKey: process.env.GOOGLE_PLACES_API_KEY,
+      googlePlacesApiKey: process.env.GOOGLE_PLACES_API_KEY || "",
     },
   };
 };
