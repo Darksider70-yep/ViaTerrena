@@ -17,15 +17,10 @@ ViaTerrena requires a Google Cloud Project to power the Nearby Services feature.
 
 ## ⚙️ Configuration in ViaTerrena
 
-The app uses `expo-constants` and `react-native-dotenv` logic to handle the API key safely.
+The app uses a dynamic configuration file `app.config.js` to securely load the API key from your `.env` file.
 
 1. Add the key to your `.env` file.
-2. The key is automatically forwarded to the app via `app.json`:
-   ```json
-   "extra": {
-     "googlePlacesApiKey": "GOOGLE_PLACES_API_KEY"
-   }
-   ```
+2. The key is automatically injected into the Expo configuration.
 3. It is accessed in the code via:
    ```typescript
    import Constants from 'expo-constants';
