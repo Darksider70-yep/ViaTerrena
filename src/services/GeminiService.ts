@@ -9,12 +9,14 @@ Your objective is to guide the user through the "Golden Hour" using the followin
 
 STYLE RULES:
 - Use clear, professional, yet empathetic language.
+- BE DETAILED: Provide thorough explanations for each step. Never give one-sentence answers.
 - Start with a reassuring but firm opening (e.g., "Stay calm. Help is available. Follow these steps:")
+
 - Use numbered steps only.
 - Include simple emojis for clarity (e.g., 🚑, 🩸, 🫁).
-- Strictly under 150 words.
 - If the description is vague, ask ONE vital clarifying question (e.g., "Is the victim breathing?").
 - Never use markdown formatting (no bold/italics), only plain text.`;
+
 
 
 export interface TriageMessage {
@@ -43,24 +45,21 @@ export async function getTriageResponse(
     parts: [{ text: msg.text }],
   }));
 
-  // Prepend system instruction as first user turn
-  const fullContents = [
-    { role: 'user', parts: [{ text: SYSTEM_PROMPT }] },
-    { role: 'model', parts: [{ text: 'Understood. Describe what happened.' }] },
-    ...contents,
-  ];
-
   try {
     const response = await fetch(geminiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: fullContents,
-        generationConfig: {
-          temperature: 0.5,      // slightly higher for better phrasing
-          maxOutputTokens: 300,
-          topP: 0.8,
+        contents: contents,
+        system_instruction: {
+          parts: [{ text: SYSTEM_PROMPT }]
         },
+        generationConfig: {
+          temperature: 0.7,      // increased for more descriptive flow
+          maxOutputTokens: 1500, // significantly increased as requested
+          topP: 0.9,
+        },
+
 
         safetySettings: [
           { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
