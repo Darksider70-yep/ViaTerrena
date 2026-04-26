@@ -72,7 +72,7 @@ export const useAppStore = create<AppState>()(
       setLastSOSTrigger: (ts) => set({ lastSOSTrigger: ts }),
     }),
     {
-      name: 'via-terrena-storage',
+      name: 'via-terrena-storage-v4',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         cachedNearby: state.cachedNearby,
@@ -85,7 +85,7 @@ export const useAppStore = create<AppState>()(
       // Sanitize booleans on rehydration — AsyncStorage can cause type confusion
       onRehydrateStorage: () => (state) => {
         if (state) {
-          state.isDarkMode = state.isDarkMode === true;
+          state.isDarkMode = state.isDarkMode === true || String(state.isDarkMode) === 'true';
           state.isOnline = true; // always reset to true on boot
         }
       },
