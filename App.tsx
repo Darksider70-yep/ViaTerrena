@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { View, ActivityIndicator, Text } from 'react-native';
+import { View, ActivityIndicator, Text, TouchableOpacity } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -15,8 +15,8 @@ function AppContent({ onboardingSeen, setOnboardingSeen }: {
   onboardingSeen: boolean, 
   setOnboardingSeen: (val: boolean) => void 
 }) {
-  useLocation();
-  useNetworkStatus();
+  // useLocation();
+  // useNetworkStatus();
 
   return (
     <NavigationContainer>
@@ -36,26 +36,11 @@ export default function App() {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    const init = async () => {
-      try {
-        const version = await AsyncStorage.getItem('via-terrena-storage-version');
-        if (version !== '6') {
-          await AsyncStorage.removeItem('via-terrena-storage');
-          await AsyncStorage.setItem('via-terrena-storage-version', '6');
-        }
-
-        const seen = await AsyncStorage.getItem('onboarding_seen');
-        if (seen === 'true') {
-          setOnboardingSeen(true);
-        }
-      } catch (e) {
-        console.warn('Init error', e);
-      } finally {
-        setHydrated(true);
-      }
-    };
-
-    init();
+    // Extreme isolation: bypass AsyncStorage entirely to test boot stability
+    const timer = setTimeout(() => {
+      setHydrated(true);
+    }, 500);
+    return () => clearTimeout(timer);
   }, []);
 
   if (!hydrated) {

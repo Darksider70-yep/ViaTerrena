@@ -5,9 +5,9 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  StatusBar,
   Alert,
 } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -57,7 +57,7 @@ const HomeScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar style="dark" />
       <View style={styles.header}>
         <Text style={styles.brand}>ViaTerrena</Text>
         <View style={styles.locationBadge}>
@@ -111,7 +111,7 @@ const HomeScreen: React.FC = () => {
         {/* Golden Hour Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Golden Hour</Text>
-          <EmergencyInfoCard />
+          {/* <EmergencyInfoCard /> */}
           <TouchableOpacity 
             style={styles.viewGuideBtn}
             onPress={() => navigation.navigate('FirstAidGuide')}
@@ -120,13 +120,12 @@ const HomeScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Recent Incidents */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Recent Incidents</Text>
-            {incidents.length > 0 && (
+            {incidents.length > 0 ? (
               <Text style={styles.countBadge}>{incidents.length}</Text>
-            )}
+            ) : null}
           </View>
           <View style={styles.incidentList}>
             {incidents.slice(0, 2).map((incident) => (
@@ -136,11 +135,11 @@ const HomeScreen: React.FC = () => {
                 onDelete={handleDeleteIncident}
               />
             ))}
-            {incidents.length === 0 && (
+            {incidents.length === 0 ? (
               <View style={styles.emptyIncidents}>
                 <Text style={styles.emptyIncidentsText}>No incidents logged yet</Text>
               </View>
-            )}
+            ) : null}
           </View>
         </View>
 
@@ -183,11 +182,13 @@ const HomeScreen: React.FC = () => {
         <Ionicons name="clipboard" size={28} color="#FFFFFF" />
       </TouchableOpacity>
 
+      {/* 
       <IncidentReporter 
         visible={reporterVisible} 
         onClose={() => setReporterVisible(false)} 
         coords={userCoords}
       />
+      */}
     </SafeAreaView>
   );
 };
