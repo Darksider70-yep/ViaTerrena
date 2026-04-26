@@ -35,12 +35,13 @@ export default function TriageScreen() {
     try {
       const reply = await getTriageResponse(updated);
       setMessages(prev => [...prev, { role: 'assistant', text: reply }]);
-    } catch {
+    } catch (error: any) {
       setMessages(prev => [
         ...prev,
-        { role: 'assistant', text: 'Unable to connect. Call 112 immediately.' },
+        { role: 'assistant', text: `Unable to connect: ${error?.message || 'Unknown error'}. Call 112 immediately.` },
       ]);
     } finally {
+
       setLoading(false);
       setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
     }

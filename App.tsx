@@ -12,6 +12,10 @@ import { useNetworkStatus } from './src/hooks/useNetworkStatus';
 import { ToastHost } from './src/utils/toast';
 import { useAppStore } from './src/store/useAppStore';
 import { colors } from './src/constants/colors';
+import { crashDetectionService } from './src/services/CrashDetectionService';
+import CrashAlertModal from './src/components/CrashAlertModal';
+import { triggerSOS } from './src/services/SOSService';
+
 
 function AppContent({ onboardingSeen, setOnboardingSeen }: { 
   onboardingSeen: boolean, 
@@ -19,6 +23,33 @@ function AppContent({ onboardingSeen, setOnboardingSeen }: {
 }) {
   useLocation();
   useNetworkStatus();
+
+  const [crashModalVisible, setCrashModalVisible] = useState(false);
+  const { userCoords, countryCode, personalContacts, setLastSOSTrigger } = useAppStore();
+
+  useEffect(() => {
+    crashDetectionService.start(() => {
+      setCrashModalVisible(true);
+    });
+    return () => crashDetectionService.stop();
+  }, []);
+
+  const handleCrashCancel = () => {
+    setCrashModalVisible(false);
+    crashDetectionService.arm();
+  };
+
+  const handleCrashConfirm = async () => {
+    setCrashModalVisible(false);
+    if (userCoords) {
+      await triggerSOS({
+        userCoords,
+        countryCode,
+        personalContacts,
+      });
+      setLastSOSTrigger(Date.now());
+    }
+  };
 
   return (
     <NavigationContainer>
@@ -29,9 +60,15 @@ function AppContent({ onboardingSeen, setOnboardingSeen }: {
         <OnboardingScreen onComplete={() => setOnboardingSeen(true)} />
       )}
       <ToastHost />
+      <CrashAlertModal
+        visible={crashModalVisible}
+        onCancel={handleCrashCancel}
+        onConfirm={handleCrashConfirm}
+      />
     </NavigationContainer>
   );
 }
+
 
 export default function App() {
   const [onboardingSeen, setOnboardingSeen] = useState<boolean>(false);

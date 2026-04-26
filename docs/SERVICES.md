@@ -27,3 +27,10 @@ Powered by Google Gemini 2.0 Flash to provide immediate medical guidance.
 - **Safety Filtering**: Implements customized safety settings to ensure guidance remains helpful and non-harmful.
 - **Fallback Logic**: Provides critical offline/error fallbacks (e.g., "Call 112") if connectivity is lost.
 
+## 5. Crash Detection Service (`CrashDetectionService.ts`)
+Uses the device accelerometer to automatically detect high-impact road accidents.
+- **Physics Algorithm**: Monitors total G-force (√(x² + y² + z²)). A crash is triggered if force exceeds 2.5G for consecutive readings.
+- **Auto-SOS Flow**: Automatically triggers a 10-second "I'm Okay" cancel window before firing the full SOS sequence.
+- **Background Support**: Runs while the app is in the foreground to provide continuous protection during travel.
+
+

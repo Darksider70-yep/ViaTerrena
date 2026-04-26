@@ -1,8 +1,5 @@
 import Constants from 'expo-constants';
 
-const GEMINI_API_KEY = Constants.expoConfig?.extra?.geminiApiKey;
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
-
 const SYSTEM_PROMPT = `You are a road accident triage assistant embedded in an
 emergency response app. The user has just been in or witnessed a road accident.
 
@@ -25,12 +22,18 @@ export interface TriageMessage {
 }
 
 export async function getTriageResponse(
+
   messages: TriageMessage[]
 ): Promise<string> {
-  if (!GEMINI_API_KEY) {
-    console.warn('[ViaTerrena] GEMINI_API_KEY is not set');
+  const geminiApiKey = Constants.expoConfig?.extra?.geminiApiKey;
+  
+  if (!geminiApiKey) {
+    console.warn('[ViaTerrena] GEMINI_API_KEY is not set in expoConfig');
     return 'Service unavailable. Call 112 immediately.';
   }
+
+  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`;
+
 
   const contents = messages.map(msg => ({
     role: msg.role === 'assistant' ? 'model' : 'user',
@@ -45,7 +48,7 @@ export async function getTriageResponse(
   ];
 
   try {
-    const response = await fetch(GEMINI_URL, {
+    const response = await fetch(geminiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

@@ -67,6 +67,14 @@ const HomeScreen: React.FC = () => {
         </View>
       </View>
 
+      <View style={styles.statusRow}>
+        <View style={styles.crashDetectionBadge}>
+          <View style={styles.activeDot} />
+          <Text style={styles.badgeText}>Crash Detection Active</Text>
+        </View>
+      </View>
+
+
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* SOS Shortcut Card */}
         <TouchableOpacity 
@@ -245,7 +253,28 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.textPrimary,
   },
+  statusRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 24,
+    marginBottom: 8,
+  },
+  crashDetectionBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E8F5E9',
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    gap: 6,
+  },
+  activeDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#4CAF50',
+  },
   scrollContent: {
+
     paddingBottom: 100,
   },
   sosCard: {

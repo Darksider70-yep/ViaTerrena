@@ -26,6 +26,8 @@ ViaTerrena follows a modular, service-oriented architecture designed for scalabi
   - `placesService`: Manages Google Places API integration and distance calculations.
   - `emergencyNumbers`: Provides a local lookup for global emergency dialers.
   - `GeminiService`: Handles AI-powered triage guidance using Google Gemini 2.0 Flash.
+  - `CrashDetectionService`: Monitors accelerometer for high-impact events.
+
 
 
 ## 📂 Folder Structure Detail
@@ -37,7 +39,8 @@ src/
 ├── hooks/        # React hooks for lifecycle logic and SOS state
 ├── navigation/   # Root and feature navigation
 ├── screens/      # Full-page feature screens (Home, Nearby, SOS, Triage)
-├── services/     # Domain-specific logic (SOS, Location, Places, Gemini)
+├── services/     # Domain-specific logic (SOS, Location, Places, Gemini, CrashDetection)
+
 
 ├── store/        # Global state definitions (Zustand)
 └── utils/        # Helper utilities (Distance, Location Sharing)
