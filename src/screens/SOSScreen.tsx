@@ -1,251 +1,483 @@
-import React from 'react';
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity, Linking, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  TouchableOpacity,
+  ScrollView,
+  Modal,
+  FlatList,
+  TextInput,
+  Animated,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as SMS from 'expo-sms';
+import { useNavigation } from '@react-navigation/native';
+import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { colors } from '../constants/colors';
 import { useAppStore } from '../store/useAppStore';
-import { useTheme } from '../hooks/useTheme';
-import { useSOSTrigger } from '../hooks/useSOSTrigger';
-import { SOSButton } from '../components/SOSButton';
-import { CountdownOverlay } from '../components/CountdownOverlay';
-import { QuickDialCard } from '../components/QuickDialCard';
-import { getEmergencyNumbers, getPrimaryEmergencyNumber } from '../services/emergencyNumbers';
-import { buildEmergencyMessage } from '../utils/locationShare';
+import { useEmergencyContacts } from '../hooks/useEmergencyContacts';
+import { getPrimaryEmergencyNumber } from '../services/emergencyNumbers';
+import { triggerSOS, SOSResult } from '../services/SOSService';
+import SOSButton from '../components/SOSButton';
+import SOSCountdown from '../components/SOSCountdown';
+import { COUNTRY_NAMES, COUNTRY_FLAGS } from '../utils/countryNames';
+import emergencyNumbersData from '../data/emergencyNumbers.json';
 
-const INDIA_FALLBACK = [
-  { label: 'National Emergency', number: '112', description: 'Police, Fire, Ambulance', color: '#E24B4A', icon: 'alert-circle' },
-  { label: 'Ambulance', number: '108', description: 'Medical emergency', color: '#E24B4A', icon: 'medical' },
-  { label: 'Police', number: '100', description: 'Law enforcement', color: '#185FA5', icon: 'shield' },
-  { label: 'Fire', number: '101', description: 'Fire & rescue', color: '#BA7517', icon: 'flame' },
-  { label: 'Highway Helpline', number: '1033', description: 'NHAI road assistance', color: '#1D9E75', icon: 'car' },
-  { label: 'Women Helpline', number: '1091', description: 'Women in distress', color: '#8B5CF6', icon: 'woman' },
-];
+import { RootTabParamList } from '../navigation/RootNavigator';
 
-export default function SOSScreen() {
-  const { theme, colors } = useTheme();
-  const { countryCode, userCoords, personalContacts } = useAppStore();
-  const { phase, secondsRemaining, trigger, cancel } = useSOSTrigger();
+const SOSScreen: React.FC = () => {
+  const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList>>();
+  const { userCoords, countryCode, setCountryCode } = useAppStore();
+  const { contacts } = useEmergencyContacts();
+  const [countdownVisible, setCountdownVisible] = useState(false);
+  const [sosResult, setSOSResult] = useState<SOSResult | null>(null);
+  const [pickerVisible, setPickerVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  const dismissAnim = useRef(new Animated.Value(0)).current;
+  const primaryNumber = getPrimaryEmergencyNumber(countryCode);
 
-  const emergencyNumbers = countryCode === 'IN' 
-    ? INDIA_FALLBACK 
-    : (() => {
-        const numbers = getEmergencyNumbers(countryCode);
-        return [
-          { label: 'Emergency', number: numbers.emergency || '112', description: 'Primary emergency', color: colors.primary, icon: 'alert-circle' },
-          { label: 'Police', number: numbers.police || '100', description: 'Law enforcement', color: colors.secondary, icon: 'shield' },
-          { label: 'Ambulance', number: numbers.ambulance || '108', description: 'Medical help', color: colors.danger, icon: 'medical' },
-        ].filter(n => !!n.number);
-      })();
+  const handleSOSPress = () => setCountdownVisible(true);
 
-  const handleSMSShare = async () => {
-    if (!userCoords) {
-      Alert.alert('Location not ready', 'Please wait while we detect your location.');
-      return;
-    }
-    const msg = buildEmergencyMessage(userCoords.latitude, userCoords.longitude);
-    const phones = personalContacts.map(c => c.phone).filter(p => !!p);
-    if (phones.length === 0) {
-      Alert.alert('No contacts', 'Add emergency contacts in the Contacts tab first.');
-      return;
-    }
-    await SMS.sendSMSAsync(phones, msg);
-  };
-
-  const handleWhatsAppShare = async () => {
-    if (!userCoords) {
-      Alert.alert('Location not ready', 'Please wait while we detect your location.');
-      return;
-    }
-    const msg = buildEmergencyMessage(userCoords.latitude, userCoords.longitude);
-    const url = `whatsapp://send?text=${encodeURIComponent(msg)}`;
+  const handleCountdownComplete = async () => {
+    setCountdownVisible(false);
+    if (!userCoords) return;
     
-    const canOpen = await Linking.canOpenURL(url);
-    if (canOpen) {
-      await Linking.openURL(url);
-    } else {
-      Alert.alert('WhatsApp not installed', 'Please install WhatsApp to use this feature.');
-    }
+    const result = await triggerSOS({
+      userCoords,
+      countryCode,
+      personalContacts: contacts,
+    });
+    
+    setSOSResult(result);
+    startDismissTimer();
   };
+
+  const handleCountdownCancel = () => {
+    setCountdownVisible(false);
+  };
+
+  const startDismissTimer = () => {
+    dismissAnim.setValue(0);
+    Animated.timing(dismissAnim, {
+      toValue: 1,
+      duration: 10000,
+      useNativeDriver: false,
+    }).start(({ finished }) => {
+      if (finished) setSOSResult(null);
+    });
+  };
+
+  const countries = Object.keys(emergencyNumbersData).map((code) => ({
+    code,
+    name: COUNTRY_NAMES[code] || code,
+    flag: COUNTRY_FLAGS[code] || '🌐',
+    number: (emergencyNumbersData as any)[code].emergency || (emergencyNumbersData as any)[code].police,
+  }));
+
+  const filteredCountries = countries.filter((c) =>
+    c.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={[styles.title, { color: theme.textPrimary }]}>Emergency SOS</Text>
-          <View style={[styles.countryBadge, { backgroundColor: theme.surface }]}>
-            <Text style={styles.countryEmoji}>{countryCode === 'IN' ? '🇮🇳' : '📍'}</Text>
-            <Text style={[styles.countryCode, { color: theme.textPrimary }]}>{countryCode}</Text>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Emergency SOS</Text>
+        <View style={styles.countryBadge}>
+          <Text style={styles.badgeText}>{COUNTRY_FLAGS[countryCode] || '🌐'} {countryCode}</Text>
+        </View>
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.heroSection}>
+          <Text style={styles.heroSubtitle}>Press and hold to call emergency services</Text>
+          
+          <View style={styles.buttonWrapper}>
+            <SOSButton onTrigger={handleSOSPress} active={countdownVisible} />
           </View>
-        </View>
 
-        <View style={styles.sosSection}>
-          <SOSButton 
-            phase={phase} 
-            secondsRemaining={secondsRemaining} 
-            onPress={trigger} 
-            onCancel={cancel} 
-          />
-          <Text style={[styles.sosHint, { color: theme.textSecondary }]}>
-            {phase === 'idle' ? 'Hold button to trigger emergency alert' : 'Emergency sequence initiated'}
-          </Text>
-        </View>
-
-        <View style={styles.shareRow}>
-          <TouchableOpacity 
-            style={[styles.shareBtn, { backgroundColor: theme.surface, borderColor: theme.border }]} 
-            onPress={handleSMSShare}
-          >
-            <Ionicons name="phone-portrait" size={20} color={colors.secondary} />
-            <Text style={[styles.shareText, { color: theme.textPrimary }]}>Share via SMS</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.shareBtn, { backgroundColor: theme.surface, borderColor: theme.border }]} 
-            onPress={handleWhatsAppShare}
-          >
-            <Ionicons name="logo-whatsapp" size={20} color={colors.success} />
-            <Text style={[styles.shareText, { color: theme.textPrimary }]}>WhatsApp</Text>
+          <TouchableOpacity style={styles.numberRow} onPress={() => setPickerVisible(true)}>
+            <Text style={styles.numberLabel}>Will dial: </Text>
+            <Text style={styles.numberValue}>{primaryNumber}</Text>
+            <View style={styles.changeBtn}>
+              <Text style={styles.changeBtnText}>Change</Text>
+              <Ionicons name="chevron-forward" size={14} color={colors.secondary} />
+            </View>
           </TouchableOpacity>
         </View>
 
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>
-            {countryCode === 'IN' ? 'India Emergency Numbers' : 'Local Emergency Numbers'}
-          </Text>
+        <View style={styles.dividerRow}>
+          <View style={styles.line} />
+          <Text style={styles.dividerText}>or</Text>
+          <View style={styles.line} />
         </View>
 
-        <View style={styles.dialerList}>
-          {emergencyNumbers.map((item, idx) => (
-            <QuickDialCard 
-              key={idx}
-              label={item.label}
-              number={item.number}
-              description={item.description}
-              color={item.color}
-              icon={item.icon}
-            />
-          ))}
+        <View style={styles.shareSection}>
+          <TouchableOpacity style={styles.shareBtn} onPress={() => handleCountdownComplete()}>
+            <Ionicons name="logo-whatsapp" size={20} color="#25D366" />
+            <Text style={styles.shareBtnText}>Share via WhatsApp</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.shareBtn, { backgroundColor: '#F0F0F0', borderWidth: 0 }]} onPress={() => handleCountdownComplete()}>
+            <Ionicons name="chatbubble-ellipses" size={20} color={colors.textPrimary} />
+            <Text style={[styles.shareBtnText, { color: colors.textPrimary }]}>Share via SMS</Text>
+          </TouchableOpacity>
         </View>
 
-        <View style={[styles.tipsCard, { backgroundColor: theme.surfaceElevated }]}>
-          <Text style={[styles.tipsTitle, { color: theme.textPrimary }]}>While waiting for help:</Text>
-          <View style={styles.tipRow}>
-            <Text style={styles.tipDot}>•</Text>
-            <Text style={[styles.tipText, { color: theme.textSecondary }]}>Stay calm and keep breathing</Text>
+        <View style={styles.contactsSection}>
+          <View style={styles.contactsHeader}>
+            <Text style={styles.sectionTitle}>Notifying {contacts.length} contacts on SOS</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Contacts')}>
+              <Text style={styles.manageBtn}>Manage →</Text>
+            </TouchableOpacity>
           </View>
-          <View style={styles.tipRow}>
-            <Text style={styles.tipDot}>•</Text>
-            <Text style={[styles.tipText, { color: theme.textSecondary }]}>Don't move injured persons unless in danger</Text>
-          </View>
-          <View style={styles.tipRow}>
-            <Text style={styles.tipDot}>•</Text>
-            <Text style={[styles.tipText, { color: theme.textSecondary }]}>Turn on hazard lights</Text>
-          </View>
-          <View style={styles.tipRow}>
-            <Text style={styles.tipDot}>•</Text>
-            <Text style={[styles.tipText, { color: theme.textSecondary }]}>Keep line open with emergency operator</Text>
+          
+          <View style={styles.avatarList}>
+            {contacts.slice(0, 5).map((c) => (
+              <View key={c.id} style={styles.avatarMini}>
+                <Text style={styles.avatarMiniText}>{c.avatarInitials}</Text>
+              </View>
+            ))}
+            {contacts.length === 0 && (
+              <Text style={styles.noContactsText}>No personal contacts added</Text>
+            )}
           </View>
         </View>
       </ScrollView>
 
-      <CountdownOverlay 
-        visible={phase === 'countdown'} 
-        secondsRemaining={secondsRemaining} 
-        onCancel={cancel}
-        emergencyNumber={getPrimaryEmergencyNumber(countryCode)}
+      {/* SOS Result Card */}
+      {sosResult && (
+        <View style={styles.resultCard}>
+          <View style={styles.resultHeader}>
+            <Ionicons name="checkmark-circle" size={24} color={colors.success} />
+            <Text style={styles.resultTitle}>Emergency services alerted</Text>
+          </View>
+          <Text style={styles.resultDetails}>
+            Called: {sosResult.dialledNumber} | SMS sent to {sosResult.smsSentCount} contacts
+          </Text>
+          <View style={styles.progressBarBg}>
+            <Animated.View
+              style={[
+                styles.progressBar,
+                {
+                  width: dismissAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ['100%', '0%'],
+                  }),
+                },
+              ]}
+            />
+          </View>
+        </View>
+      )}
+
+      {/* Country Picker Modal */}
+      <Modal visible={pickerVisible} animationType="slide">
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Select Country</Text>
+            <TouchableOpacity onPress={() => setPickerVisible(false)}>
+              <Ionicons name="close" size={28} color={colors.textPrimary} />
+            </TouchableOpacity>
+          </View>
+          
+          <View style={styles.searchBox}>
+            <Ionicons name="search" size={20} color={colors.textSecondary} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search country..."
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+          </View>
+
+          <FlatList
+            data={filteredCountries}
+            keyExtractor={(item) => item.code}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.countryRow}
+                onPress={() => {
+                  setCountryCode(item.code);
+                  setPickerVisible(false);
+                }}
+              >
+                <Text style={styles.rowFlag}>{item.flag}</Text>
+                <View style={styles.rowInfo}>
+                  <Text style={styles.rowName}>{item.name}</Text>
+                  <Text style={styles.rowNumber}>SOS: {item.number}</Text>
+                </View>
+                {countryCode === item.code && (
+                  <Ionicons name="checkmark" size={20} color={colors.secondary} />
+                )}
+              </TouchableOpacity>
+            )}
+          />
+        </SafeAreaView>
+      </Modal>
+
+      <SOSCountdown
+        visible={countdownVisible}
+        onComplete={handleCountdownComplete}
+        onCancel={handleCountdownCancel}
+        emergencyNumber={primaryNumber}
       />
     </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  safe: { flex: 1 },
-  scroll: { padding: 24 },
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    padding: 24,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '900',
-    letterSpacing: -1,
+    fontSize: 24,
+    fontWeight: '800',
+    color: colors.textPrimary,
   },
   countryBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
+    backgroundColor: colors.background,
+    paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  countryEmoji: { fontSize: 16, marginRight: 6 },
-  countryCode: { fontSize: 14, fontWeight: '800' },
-  sosSection: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  sosHint: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginTop: -8,
-  },
-  shareRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 32,
-  },
-  shareBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    height: 52,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderRadius: 20,
     borderWidth: 1,
+    borderColor: colors.border,
   },
-  shareText: {
+  badgeText: {
     fontSize: 14,
     fontWeight: '700',
-    marginLeft: 8,
+    color: colors.textPrimary,
   },
-  sectionHeader: {
+  scrollContent: {
+    paddingBottom: 40,
+  },
+  heroSection: {
+    alignItems: 'center',
+    paddingTop: 20,
+  },
+  heroSubtitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 40,
+  },
+  buttonWrapper: {
+    marginVertical: 20,
+  },
+  numberRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 40,
+    padding: 16,
+    backgroundColor: colors.background,
+    borderRadius: 16,
+  },
+  numberLabel: {
+    fontSize: 16,
+    color: colors.textSecondary,
+  },
+  numberValue: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: colors.sosBackground,
+    marginRight: 10,
+  },
+  changeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderLeftWidth: 1,
+    borderLeftColor: colors.border,
+    paddingLeft: 10,
+  },
+  changeBtnText: {
+    fontSize: 14,
+    color: colors.secondary,
+    fontWeight: '600',
+    marginRight: 4,
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+    marginVertical: 30,
+  },
+  line: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.border,
+  },
+  dividerText: {
+    marginHorizontal: 16,
+    color: colors.textSecondary,
+    fontSize: 14,
+  },
+  shareSection: {
+    paddingHorizontal: 24,
+    gap: 12,
+  },
+  shareBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 56,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: '#FFFFFF',
+  },
+  shareBtnText: {
+    marginLeft: 10,
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#25D366',
+  },
+  contactsSection: {
+    marginTop: 40,
+    paddingHorizontal: 24,
+  },
+  contactsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  dialerList: {
-    marginBottom: 32,
-  },
-  tipsCard: {
-    padding: 20,
-    borderRadius: 20,
-    marginBottom: 40,
-  },
-  tipsTitle: {
     fontSize: 16,
-    fontWeight: '800',
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  manageBtn: {
+    fontSize: 14,
+    color: colors.secondary,
+    fontWeight: '600',
+  },
+  avatarList: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  avatarMini: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.secondary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: -10,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  avatarMiniText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  noContactsText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontStyle: 'italic',
+  },
+  resultCard: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  resultHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  resultTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginLeft: 8,
+  },
+  resultDetails: {
+    fontSize: 13,
+    color: colors.textSecondary,
     marginBottom: 12,
   },
-  tipRow: {
-    flexDirection: 'row',
-    marginBottom: 6,
+  progressBarBg: {
+    height: 4,
+    backgroundColor: colors.background,
+    borderRadius: 2,
+    overflow: 'hidden',
   },
-  tipDot: {
-    width: 12,
-    fontSize: 14,
-    color: '#8E8E93',
+  progressBar: {
+    height: '100%',
+    backgroundColor: colors.success,
   },
-  tipText: {
+  modalContainer: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.background,
+    margin: 24,
+    marginTop: 0,
+    paddingHorizontal: 16,
+    height: 50,
+    borderRadius: 12,
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 10,
+    fontSize: 16,
+    color: colors.textPrimary,
+  },
+  countryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    paddingHorizontal: 24,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  rowFlag: {
+    fontSize: 32,
+    marginRight: 16,
+  },
+  rowInfo: {
+    flex: 1,
+  },
+  rowName: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  rowNumber: {
     fontSize: 14,
-    fontWeight: '500',
-    lineHeight: 20,
+    color: colors.textSecondary,
   },
 });
+
+export default SOSScreen;

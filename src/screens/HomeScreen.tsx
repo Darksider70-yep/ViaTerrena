@@ -1,293 +1,235 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  ScrollView,
+  TouchableOpacity,
+  StatusBar,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useAppStore } from '../store/useAppStore';
-import { SERVICE_CATEGORIES } from '../constants/serviceCategories';
-import { useTheme } from '../hooks/useTheme';
 import { useNavigation } from '@react-navigation/native';
+import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { colors } from '../constants/colors';
+import { useAppStore } from '../store/useAppStore';
+import { getEmergencyNumbers } from '../services/emergencyNumbers';
+import { EMERGENCY_EMOJI_MAP, EMERGENCY_COLOR_MAP } from '../constants/serviceCategories';
+import QuickDialCard from '../components/QuickDialCard';
+import EmergencyInfoCard from '../components/EmergencyInfoCard';
+import { COUNTRY_FLAGS, COUNTRY_NAMES } from '../utils/countryNames';
 
-const { width } = Dimensions.get('window');
-const GRID_PADDING = 20;
-const ITEM_SPACING = 12;
-const CARD_WIDTH = (width - (GRID_PADDING * 2) - ITEM_SPACING) / 2;
+import { RootTabParamList } from '../navigation/RootNavigator';
 
-export default function HomeScreen() {
-  const { countryCode, setSelectedCategory, lastSOSTrigger, personalContacts } = useAppStore();
-  const { theme, colors } = useTheme();
-  const navigation = useNavigation<any>();
+const HomeScreen: React.FC = () => {
+  const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList>>();
+  const { countryCode } = useAppStore();
+  const emergencyNumbers = getEmergencyNumbers(countryCode);
 
-  const lastSOSDate = lastSOSTrigger ? new Date(lastSOSTrigger).toLocaleDateString() : null;
+  const dialCards = Object.entries(emergencyNumbers).map(([key, number]) => ({
+    key,
+    label: key.replace(/([A-Z])/g, ' $1'), // camelCase to Space Case
+    number: number as string,
+    emoji: EMERGENCY_EMOJI_MAP[key] ?? '📞',
+    color: EMERGENCY_COLOR_MAP[key] ?? colors.info,
+  }));
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <View>
-            <Text style={[styles.appName, { color: theme.textPrimary }]}>ViaTerrena</Text>
-            <View style={styles.locationRow}>
-              <Ionicons name="location" size={14} color={colors.secondary} />
-              <Text style={[styles.locationText, { color: theme.textSecondary }]}>
-                {countryCode === 'IN' ? 'Chennai, India' : countryCode}
-              </Text>
-            </View>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" />
+      <View style={styles.header}>
+        <Text style={styles.brand}>ViaTerrena</Text>
+        <View style={styles.locationBadge}>
+          <Text style={styles.badgeText}>
+            {COUNTRY_FLAGS[countryCode] || '🌐'} {COUNTRY_NAMES[countryCode] || countryCode}
+          </Text>
+        </View>
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* SOS Shortcut Card */}
+        <TouchableOpacity 
+          style={styles.sosCard}
+          onPress={() => navigation.navigate('SOS')}
+          activeOpacity={0.9}
+        >
+          <View style={styles.sosIconCircle}>
+            <Ionicons name="alert-circle" size={32} color="#E24B4A" />
           </View>
-          <TouchableOpacity 
-            style={[styles.profileBtn, { backgroundColor: theme.surface }]}
-            onPress={() => navigation.navigate('Contacts')}
-          >
-            <Ionicons name="person" size={20} color={colors.secondary} />
-          </TouchableOpacity>
+          <View style={styles.sosTextContainer}>
+            <Text style={styles.sosTitle}>Need emergency help?</Text>
+            <Text style={styles.sosSubtitle}>Tap SOS to alert services + contacts</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={24} color="#E24B4A" />
+        </TouchableOpacity>
+
+        {/* Quick Dial Grid */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Emergency Numbers</Text>
+            <Text style={styles.sectionSubtitle}>For {COUNTRY_NAMES[countryCode] || countryCode} — tap to call</Text>
+          </View>
+          <View style={styles.grid}>
+            {dialCards.map((card) => (
+              <QuickDialCard 
+                key={card.key}
+                label={card.label}
+                number={card.number}
+                emoji={card.emoji}
+                color={card.color}
+              />
+            ))}
+          </View>
         </View>
 
-        {/* Safety Status Card */}
-        <View style={[styles.statusCard, { backgroundColor: colors.success + '10', borderColor: colors.success + '20' }]}>
-          <View style={[styles.statusIcon, { backgroundColor: colors.success }]}>
-            <Ionicons name="shield-checkmark" size={24} color="#fff" />
-          </View>
-          <View style={styles.statusInfo}>
-            <Text style={[styles.statusTitle, { color: theme.textPrimary }]}>System Active</Text>
-            <Text style={[styles.statusSub, { color: theme.textSecondary }]}>
-              {personalContacts.length > 0 
-                ? `${personalContacts.length} emergency contacts configured`
-                : 'No emergency contacts added yet'}
-            </Text>
-          </View>
+        {/* Golden Hour Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Golden Hour</Text>
+          <EmergencyInfoCard />
         </View>
 
-        <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>Emergency Services</Text>
-        
-        <View style={styles.grid}>
-          {SERVICE_CATEGORIES.map((cat) => (
-            <TouchableOpacity
-              key={cat.id}
-              style={[
-                styles.catCard, 
-                { 
-                  backgroundColor: theme.surface,
-                  borderColor: theme.border,
-                }
-              ]}
-              activeOpacity={0.8}
-              onPress={() => {
-                setSelectedCategory(cat.id as any);
-                navigation.navigate('Nearby');
-              }}
+        {/* Quick Access Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Quick Access</Text>
+          <View style={styles.accessRow}>
+            <TouchableOpacity 
+              style={[styles.accessBtn, { backgroundColor: '#F0F9FF' }]}
+              onPress={() => navigation.navigate('Nearby')}
             >
-              <View style={[styles.catIconContainer, { backgroundColor: cat.color + '15' }]}>
-                <Text style={styles.catEmoji}>{cat.emoji}</Text>
-              </View>
-              <Text style={[styles.catLabel, { color: theme.textPrimary }]}>{cat.label}</Text>
-              <View style={[styles.catBadge, { backgroundColor: cat.color }]} />
+              <Ionicons name="map" size={24} color={colors.secondary} />
+              <Text style={[styles.accessBtnText, { color: colors.secondary }]}>Nearby Services</Text>
             </TouchableOpacity>
-          ))}
-        </View>
-
-        {lastSOSDate && (
-          <View style={[styles.activityCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-            <View style={styles.activityHeader}>
-              <Text style={[styles.activityTitle, { color: theme.textPrimary }]}>Recent Activity</Text>
-              <Ionicons name="time-outline" size={16} color={theme.textHint} />
-            </View>
-            <View style={styles.activityItem}>
-              <View style={[styles.activityDot, { backgroundColor: colors.primary }]} />
-              <Text style={[styles.activityText, { color: theme.textSecondary }]}>
-                Last SOS triggered on {lastSOSDate}
-              </Text>
-            </View>
-          </View>
-        )}
-
-        <View style={[styles.banner, { backgroundColor: theme.surfaceElevated, borderColor: theme.border }]}>
-          <View style={styles.bannerContent}>
-            <View style={[styles.bannerIcon, { backgroundColor: colors.accent + '20' }]}>
-              <Ionicons name="notifications" size={24} color={colors.accent} />
-            </View>
-            <View style={styles.bannerText}>
-              <Text style={[styles.bannerTitle, { color: theme.textPrimary }]}>Smart Monitoring</Text>
-              <Text style={[styles.bannerSub, { color: theme.textSecondary }]}>Your safety is our priority. ViaTerrena tracks real-time emergency services.</Text>
-            </View>
+            <TouchableOpacity 
+              style={[styles.accessBtn, { backgroundColor: '#FFF7ED' }]}
+              onPress={() => navigation.navigate('Vehicle')}
+            >
+              <Ionicons name="car" size={24} color={colors.warning} />
+              <Text style={[styles.accessBtnText, { color: colors.warning }]}>Vehicle Help</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
     </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  safe: { flex: 1 },
-  scroll: { padding: GRID_PADDING },
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
-    marginTop: 8,
-  },
-  appName: { 
-    fontSize: 34, 
-    fontWeight: '900', 
-    letterSpacing: -1.5,
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  locationText: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginLeft: 4,
-  },
-  profileBtn: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-  },
-  statusCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 24,
-    borderWidth: 1,
-    marginBottom: 32,
-  },
-  statusIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 16,
-  },
-  statusInfo: {
-    flex: 1,
-  },
-  statusTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  statusSub: {
-    fontSize: 13,
-    fontWeight: '600',
-    marginTop: 2,
-  },
-  sectionTitle: { 
-    fontSize: 20, 
-    fontWeight: '800',
-    marginBottom: 20,
-    letterSpacing: -0.5,
-  },
-  grid: { 
-    flexDirection: 'row', 
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  catCard: {
-    width: CARD_WIDTH,
-    height: CARD_WIDTH * 1.1,
-    borderRadius: 24,
-    padding: 20,
-    borderWidth: 1,
-    marginBottom: ITEM_SPACING,
-    justifyContent: 'space-between',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.04,
-    shadowRadius: 12,
-  },
-  catIconContainer: {
-    width: 54,
-    height: 54,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  catEmoji: { 
-    fontSize: 28,
-  },
-  catLabel: { 
-    fontSize: 16, 
-    fontWeight: '700',
-    letterSpacing: -0.3,
-  },
-  catBadge: {
-    position: 'absolute',
-    top: 20,
-    right: 20,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  activityCard: {
-    padding: 20,
-    borderRadius: 24,
-    borderWidth: 1,
-    marginBottom: 32,
-  },
-  activityHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  activityTitle: {
-    fontSize: 14,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  activityItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  activityDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 10,
-  },
-  activityText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  banner: {
-    borderRadius: 24,
     padding: 24,
-    borderWidth: 1,
-    marginBottom: 40,
+    paddingBottom: 12,
   },
-  bannerContent: {
+  brand: {
+    fontSize: 24,
+    fontWeight: '900',
+    color: '#E24B4A',
+  },
+  locationBadge: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: colors.background,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  bannerIcon: {
+  badgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  scrollContent: {
+    paddingBottom: 40,
+  },
+  sosCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF0F0',
+    margin: 24,
+    marginTop: 12,
+    padding: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E24B4A',
+    elevation: 2,
+    shadowColor: '#E24B4A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+  },
+  sosIconCircle: {
     width: 52,
     height: 52,
-    borderRadius: 16,
-    alignItems: 'center',
+    borderRadius: 26,
+    backgroundColor: '#FFE5E5',
     justifyContent: 'center',
-    marginRight: 16,
+    alignItems: 'center',
   },
-  bannerText: {
+  sosTextContainer: {
     flex: 1,
+    marginLeft: 16,
   },
-  bannerTitle: {
+  sosTitle: {
     fontSize: 18,
     fontWeight: '800',
-    marginBottom: 4,
+    color: colors.textPrimary,
   },
-  bannerSub: {
+  sosSubtitle: {
     fontSize: 13,
-    lineHeight: 18,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  section: {
+    marginTop: 12,
+  },
+  sectionHeader: {
+    paddingHorizontal: 24,
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: colors.textPrimary,
+    paddingHorizontal: 24,
+    marginBottom: 16,
+  },
+  sectionSubtitle: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginTop: 4,
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 24,
+    justifyContent: 'space-between',
+  },
+  accessRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 24,
+    gap: 12,
+  },
+  accessBtn: {
+    flex: 1,
+    height: 100,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  accessBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginTop: 8,
+    textAlign: 'center',
   },
 });
+
+export default HomeScreen;

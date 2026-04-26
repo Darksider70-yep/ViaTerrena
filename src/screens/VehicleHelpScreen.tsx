@@ -1,180 +1,147 @@
-import React, { useState, useMemo, useCallback } from 'react';
-import { StyleSheet, View, Text, FlatList, TouchableOpacity, Linking, Platform } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useState, useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  TouchableOpacity,
+  Animated,
+  useWindowDimensions,
+} from 'react-native';
+import { colors } from '../constants/colors';
 import { useAppStore } from '../store/useAppStore';
-import { useTheme } from '../hooks/useTheme';
-import { VehicleServiceCard } from '../components/VehicleServiceCard';
-import { NearbyPlace } from '../services/placesService';
-import { useNavigation } from '@react-navigation/native';
+import VehicleServiceTab from '../components/VehicleServiceTab';
 
-type VehicleTab = 'towing' | 'puncture_shop' | 'showroom';
+type TabType = 'towing' | 'puncture_shop' | 'showroom';
 
-const VEHICLE_TABS: { id: VehicleTab; label: string; emoji: string }[] = [
-  { id: 'towing', label: 'Towing', emoji: '🚗' },
-  { id: 'puncture_shop', label: 'Tyre Repair', emoji: '🔧' },
-  { id: 'showroom', label: 'Showrooms', emoji: '🏪' },
-];
+const VehicleHelpScreen: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<TabType>('towing');
+  const { cachedNearby } = useAppStore();
+  const { width } = useWindowDimensions();
+  
+  const tabWidth = (width - 32) / 3;
+  const underlinePos = useRef(new Animated.Value(0)).current;
 
-export default function VehicleHelpScreen() {
-  const [activeTab, setActiveTab] = useState<VehicleTab>('towing');
-  const { theme, colors } = useTheme();
-  const navigation = useNavigation<any>();
-  const cachedNearby = useAppStore((s) => s.cachedNearby);
-
-  const data = useMemo(() => {
-    return cachedNearby[activeTab] || [];
-  }, [cachedNearby, activeTab]);
-
-  const handleCall = useCallback((phone: string) => {
-    Linking.openURL(`tel:${phone.replace(/\s/g, '')}`);
-  }, []);
-
-  const handleDirections = useCallback((place: NearbyPlace) => {
-    const url = Platform.select({
-      ios: `maps:?daddr=${place.latitude},${place.longitude}`,
-      android: `google.navigation:q=${place.latitude},${place.longitude}`,
-    });
-    if (url) Linking.openURL(url);
-  }, []);
-
-  const renderTab = ({ id, label, emoji }: { id: VehicleTab; label: string; emoji: string }) => {
-    const isActive = activeTab === id;
-    return (
-      <TouchableOpacity
-        key={id}
-        style={[styles.tab, isActive && { borderBottomColor: '#BA7517' }]}
-        onPress={() => setActiveTab(id)}
-      >
-        <Text style={[styles.tabEmoji, !isActive && { opacity: 0.6 }]}>{emoji}</Text>
-        <Text style={[styles.tabLabel, { color: isActive ? '#BA7517' : theme.textSecondary }, isActive && styles.tabLabelActive]}>
-          {label}
-        </Text>
-      </TouchableOpacity>
-    );
+  const handleTabPress = (tab: TabType, index: number) => {
+    setActiveTab(tab);
+    Animated.spring(underlinePos, {
+      toValue: index * tabWidth,
+      useNativeDriver: true,
+      tension: 50,
+      friction: 8,
+    }).start();
   };
 
+  const getCount = (cat: TabType) => cachedNearby[cat]?.length || 0;
+
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
-      <View style={[styles.header, { backgroundColor: theme.surface }]}>
-        <Text style={[styles.title, { color: theme.textPrimary }]}>Vehicle Help</Text>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Vehicle Assistance</Text>
+        <Text style={styles.subtitle}>Services near your current location</Text>
+      </View>
+
+      <View style={styles.tabBarContainer}>
         <View style={styles.tabBar}>
-          {VEHICLE_TABS.map(renderTab)}
+          <TouchableOpacity 
+            style={styles.tab} 
+            onPress={() => handleTabPress('towing', 0)}
+          >
+            <Text style={[styles.tabText, activeTab === 'towing' && styles.activeTabText]}>
+              Towing ({getCount('towing')})
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.tab} 
+            onPress={() => handleTabPress('puncture_shop', 1)}
+          >
+            <Text style={[styles.tabText, activeTab === 'puncture_shop' && styles.activeTabText]}>
+              Tyre ({getCount('puncture_shop')})
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.tab} 
+            onPress={() => handleTabPress('showroom', 2)}
+          >
+            <Text style={[styles.tabText, activeTab === 'showroom' && styles.activeTabText]}>
+              Showroom ({getCount('showroom')})
+            </Text>
+          </TouchableOpacity>
+
+          <Animated.View 
+            style={[
+              styles.underline, 
+              { 
+                width: tabWidth,
+                transform: [{ translateX: underlinePos }]
+              }
+            ]} 
+          />
         </View>
       </View>
 
-      <FlatList
-        data={data}
-        keyExtractor={(item) => item.placeId}
-        renderItem={({ item }) => (
-          <VehicleServiceCard
-            place={item}
-            onCallPress={handleCall}
-            onDirectionsPress={handleDirections}
-            onPress={(p) => handleDirections(p)}
-          />
-        )}
-        contentContainerStyle={styles.listContent}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyIcon}>{VEHICLE_TABS.find(t => t.id === activeTab)?.emoji}</Text>
-            <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>No vehicle services loaded yet</Text>
-            <Text style={[styles.emptySub, { color: theme.textSecondary }]}>
-              Go to the Nearby tab and your location will be searched automatically.
-            </Text>
-            <TouchableOpacity 
-              style={[styles.nearbyBtn, { backgroundColor: colors.secondary }]}
-              onPress={() => navigation.navigate('Nearby')}
-            >
-              <Text style={styles.nearbyBtnText}>Open Nearby Tab →</Text>
-            </TouchableOpacity>
-          </View>
-        }
-      />
+      <View style={styles.content}>
+        <VehicleServiceTab category={activeTab} />
+      </View>
     </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  safe: { flex: 1 },
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   header: {
-    paddingTop: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
+    padding: 24,
+    backgroundColor: colors.surface,
   },
   title: {
     fontSize: 28,
-    fontWeight: '900',
-    paddingHorizontal: 24,
-    marginBottom: 16,
-    letterSpacing: -1,
+    fontWeight: '800',
+    color: colors.textPrimary,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginTop: 4,
+  },
+  tabBarContainer: {
+    backgroundColor: colors.surface,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
   tabBar: {
     flexDirection: 'row',
-    paddingHorizontal: 12,
+    height: 50,
+    alignItems: 'center',
+    position: 'relative',
   },
   tab: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
+    height: '100%',
     justifyContent: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 3,
-    borderBottomColor: 'transparent',
+    alignItems: 'center',
   },
-  tabEmoji: {
-    fontSize: 16,
-    marginRight: 6,
-  },
-  tabLabel: {
-    fontSize: 14,
+  tabText: {
+    fontSize: 13,
     fontWeight: '600',
+    color: colors.textSecondary,
   },
-  tabLabelActive: {
-    fontWeight: '800',
+  activeTabText: {
+    color: colors.warning, // Amber underline + amber text as per spec
   },
-  listContent: {
-    padding: 16,
-    paddingTop: 20,
-    paddingBottom: 40,
+  underline: {
+    position: 'absolute',
+    bottom: 0,
+    height: 3,
+    backgroundColor: colors.warning,
+    borderRadius: 3,
   },
-  emptyContainer: {
+  content: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 100,
-    paddingHorizontal: 40,
-  },
-  emptyIcon: {
-    fontSize: 64,
-    marginBottom: 16,
-    opacity: 0.8,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    textAlign: 'center',
-  },
-  emptySub: {
-    fontSize: 14,
-    textAlign: 'center',
-    marginTop: 8,
-    lineHeight: 20,
-  },
-  nearbyBtn: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    borderRadius: 16,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-  },
-  nearbyBtnText: {
-    color: '#fff',
-    fontWeight: '800',
-    fontSize: 15,
   },
 });
+
+export default VehicleHelpScreen;

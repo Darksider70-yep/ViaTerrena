@@ -1,44 +1,42 @@
 import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Linking } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { TouchableOpacity, View, Text, StyleSheet, Linking, useWindowDimensions } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { useTheme } from '../hooks/useTheme';
 
 interface QuickDialCardProps {
   label: string;
   number: string;
-  description: string;
+  emoji: string;
   color: string;
-  icon?: any;
 }
 
-export const QuickDialCard = ({ label, number, description, color, icon = 'alert-circle' }: QuickDialCardProps) => {
-  const { theme } = useTheme();
+const QuickDialCard: React.FC<QuickDialCardProps> = ({ label, number, emoji, color }) => {
+  const { width } = useWindowDimensions();
+  const cardWidth = (width / 2) - 30;
 
-  const handlePress = async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const cleanNumber = number.replace(/\s/g, '');
-    Linking.openURL(`tel:${cleanNumber}`);
+  const handlePress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Linking.openURL(`tel:${number.replace(/\s/g, '')}`);
   };
 
   return (
     <TouchableOpacity 
-      style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]} 
+      style={[
+        styles.card, 
+        { 
+          width: cardWidth,
+          backgroundColor: `${color}1A`, // 10% opacity tint
+          borderColor: `${color}40`, // 25% opacity border
+        }
+      ]}
       onPress={handlePress}
       activeOpacity={0.7}
     >
-      <View style={styles.left}>
-        <View style={[styles.iconBox, { backgroundColor: color + '15' }]}>
-          <Ionicons name={icon} size={24} color={color} />
-        </View>
-        <View style={styles.info}>
-          <Text style={[styles.label, { color: theme.textPrimary }]}>{label}</Text>
-          <Text style={[styles.description, { color: theme.textSecondary }]}>{description}</Text>
-        </View>
+      <View style={[styles.emojiCircle, { backgroundColor: color }]}>
+        <Text style={styles.emojiText}>{emoji}</Text>
       </View>
-      <View style={styles.right}>
-        <Text style={[styles.number, { color: color }]}>{number}</Text>
-        <Ionicons name="chevron-forward" size={16} color={theme.textHint} />
+      <View style={styles.info}>
+        <Text style={styles.label} numberOfLines={1}>{label}</Text>
+        <Text style={[styles.number, { color }]}>{number}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -46,52 +44,39 @@ export const QuickDialCard = ({ label, number, description, color, icon = 'alert
 
 const styles = StyleSheet.create({
   card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 14,
+    height: 80,
     borderRadius: 16,
     borderWidth: 1,
-    marginBottom: 10,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-  },
-  left: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
+    paddingHorizontal: 12,
+    marginBottom: 12,
   },
-  iconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    alignItems: 'center',
+  emojiCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
-    marginRight: 12,
+    alignItems: 'center',
+  },
+  emojiText: {
+    fontSize: 18,
   },
   info: {
+    marginLeft: 10,
     flex: 1,
   },
   label: {
-    fontSize: 15,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-  },
-  description: {
     fontSize: 12,
-    fontWeight: '500',
-    marginTop: 1,
-  },
-  right: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    fontWeight: '600',
+    color: '#8E8E93',
+    textTransform: 'capitalize',
   },
   number: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '800',
-    marginRight: 8,
+    marginTop: 2,
   },
 });
+
+export default React.memo(QuickDialCard);

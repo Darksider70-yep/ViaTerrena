@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import * as Haptics from 'expo-haptics';
 import { useAppStore } from '../store/useAppStore';
-import { triggerFullSOS } from '../services/SOSService';
+import { triggerSOS } from '../services/SOSService';
 
 interface SOSTriggerState {
   phase: 'idle' | 'countdown' | 'executing' | 'done' | 'cancelled';
@@ -41,8 +41,8 @@ export function useSOSTrigger(): SOSTriggerState {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
 
     if (userCoords) {
-      await triggerFullSOS({
-        coords: userCoords,
+      await triggerSOS({
+        userCoords,
         countryCode,
         personalContacts,
       });

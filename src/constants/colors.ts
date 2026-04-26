@@ -25,7 +25,8 @@ export const colors = {
   glass:         'rgba(255, 255, 255, 0.85)',
   glassDark:     'rgba(0, 0, 0, 0.04)',
   shadow:        'rgba(0, 0, 0, 0.05)',
-  sosPulse:      'rgba(255, 59, 48, 0.2)',
+  sosBackground: '#E24B4A',
+  sosPulse:      'rgba(226, 75, 74, 0.3)',
 
   // Status
   success:       '#34C759',

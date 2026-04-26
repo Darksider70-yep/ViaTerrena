@@ -1,132 +1,182 @@
-import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, Animated } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Animated,
+  Easing,
+} from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { colors } from '../constants/colors';
-import { PulseRing } from './PulseRing';
-import { Ionicons } from '@expo/vector-icons';
 
 interface SOSButtonProps {
-  phase: 'idle' | 'countdown' | 'executing' | 'done' | 'cancelled';
-  secondsRemaining: number;
-  onPress: () => void;
-  onCancel: () => void;
+  onTrigger: () => void;
+  disabled?: boolean;
+  size?: number; // default 200
+  active?: boolean; // Stop pulsing when active (countdown)
 }
 
-export const SOSButton = ({ phase, secondsRemaining, onPress, onCancel }: SOSButtonProps) => {
-  const isPulsing = phase === 'countdown' || phase === 'executing';
+const SOSButton: React.FC<SOSButtonProps> = ({
+  onTrigger,
+  disabled = false,
+  size = 200,
+  active = false,
+}) => {
+  const pulse1 = useRef(new Animated.Value(1)).current;
+  const pulse2 = useRef(new Animated.Value(1)).current;
+  const pulse3 = useRef(new Animated.Value(1)).current;
 
-  const renderContent = () => {
-    switch (phase) {
-      case 'idle':
-        return (
-          <View style={styles.content}>
-            <Text style={styles.title}>SOS</Text>
-            <Text style={styles.subtitle}>tap for emergency</Text>
-          </View>
-        );
-      case 'countdown':
-        return (
-          <View style={styles.content}>
-            <Text style={styles.countdown}>{secondsRemaining}</Text>
-            <Text style={styles.cancelText}>CANCEL</Text>
-          </View>
-        );
-      case 'executing':
-        return (
-          <View style={styles.content}>
-            <Ionicons name="call" size={32} color="#fff" />
-            <Text style={styles.statusText}>Calling...</Text>
-          </View>
-        );
-      case 'done':
-        return (
-          <View style={styles.content}>
-            <Ionicons name="checkmark-circle" size={48} color="#fff" />
-            <Text style={styles.statusText}>Help Alerted</Text>
-          </View>
-        );
-      case 'cancelled':
-        return (
-          <View style={styles.content}>
-            <Ionicons name="close-circle" size={48} color="#fff" />
-            <Text style={styles.statusText}>Cancelled</Text>
-          </View>
-        );
+  const opacity1 = useRef(new Animated.Value(0.6)).current;
+  const opacity2 = useRef(new Animated.Value(0.6)).current;
+  const opacity3 = useRef(new Animated.Value(0.6)).current;
+
+  useEffect(() => {
+    if (active) {
+      // Stop animations
+      pulse1.setValue(1);
+      pulse2.setValue(1);
+      pulse3.setValue(1);
+      opacity1.setValue(0);
+      opacity2.setValue(0);
+      opacity3.setValue(0);
+      return;
     }
+
+    const createAnimation = (pulse: Animated.Value, opacity: Animated.Value, delay: number) => {
+      return Animated.loop(
+        Animated.sequence([
+          Animated.delay(delay),
+          Animated.parallel([
+            Animated.timing(pulse, {
+              toValue: 1.6,
+              duration: 2000,
+              easing: Easing.out(Easing.quad),
+              useNativeDriver: true,
+            }),
+            Animated.timing(opacity, {
+              toValue: 0,
+              duration: 2000,
+              easing: Easing.out(Easing.quad),
+              useNativeDriver: true,
+            }),
+          ]),
+        ])
+      );
+    };
+
+    const anim1 = createAnimation(pulse1, opacity1, 0);
+    const anim2 = createAnimation(pulse2, opacity2, 600);
+    const anim3 = createAnimation(pulse3, opacity3, 1200);
+
+    anim1.start();
+    anim2.start();
+    anim3.start();
+
+    return () => {
+      anim1.stop();
+      anim2.stop();
+      anim3.stop();
+    };
+  }, [active, pulse1, pulse2, pulse3, opacity1, opacity2, opacity3]);
+
+  const handlePressIn = () => {
+    if (disabled) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
   };
 
-  const getBackgroundColor = () => {
-    if (phase === 'done') return '#1D9E75';
-    if (phase === 'cancelled') return colors.textSecondary || '#8E8E93';
-    return colors.primary;
+  const handlePress = () => {
+    if (disabled) return;
+    onTrigger();
   };
 
   return (
-    <View style={styles.wrapper}>
-      <PulseRing active={isPulsing} size={160} />
+    <View style={[styles.container, { width: size * 1.6, height: size * 1.6 }]}>
+      {/* Pulse Rings */}
+      <Animated.View
+        style={[
+          styles.pulse,
+          {
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+            transform: [{ scale: pulse1 }],
+            opacity: opacity1,
+          },
+        ]}
+      />
+      <Animated.View
+        style={[
+          styles.pulse,
+          {
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+            transform: [{ scale: pulse2 }],
+            opacity: opacity2,
+          },
+        ]}
+      />
+      <Animated.View
+        style={[
+          styles.pulse,
+          {
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+            transform: [{ scale: pulse3 }],
+            opacity: opacity3,
+          },
+        ]}
+      />
+
+      {/* Main Button */}
       <TouchableOpacity
-        style={[styles.button, { backgroundColor: getBackgroundColor() }]}
-        onPress={phase === 'idle' ? onPress : phase === 'countdown' ? onCancel : undefined}
-        activeOpacity={0.8}
-        accessibilityLabel="Emergency SOS button. Double tap to call emergency services."
-        accessibilityRole="button"
+        activeOpacity={0.9}
+        onPressIn={handlePressIn}
+        onPress={handlePress}
+        disabled={disabled}
+        style={[
+          styles.button,
+          {
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+          },
+        ]}
       >
-        {renderContent()}
+        <Text style={styles.text}>SOS</Text>
       </TouchableOpacity>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  wrapper: {
-    alignItems: 'center',
+  container: {
     justifyContent: 'center',
-    marginVertical: 40,
+    alignItems: 'center',
   },
   button: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    alignItems: 'center',
+    backgroundColor: colors.sosBackground,
     justifyContent: 'center',
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-  },
-  content: {
     alignItems: 'center',
-    justifyContent: 'center',
+    elevation: 12,
+    shadowColor: colors.sosBackground,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    zIndex: 10,
   },
-  title: {
-    fontSize: 48,
-    fontWeight: '900',
-    color: '#fff',
-    letterSpacing: -1,
-  },
-  subtitle: {
-    fontSize: 12,
-    color: '#fff',
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    marginTop: -4,
-  },
-  countdown: {
-    fontSize: 72,
-    fontWeight: '900',
-    color: '#fff',
-  },
-  cancelText: {
-    fontSize: 14,
-    color: '#fff',
+  text: {
+    color: '#FFFFFF',
+    fontSize: 32,
     fontWeight: '800',
-    marginTop: -8,
+    letterSpacing: 4,
   },
-  statusText: {
-    fontSize: 16,
-    color: '#fff',
-    fontWeight: '800',
-    marginTop: 8,
-    textAlign: 'center',
+  pulse: {
+    position: 'absolute',
+    backgroundColor: colors.sosPulse,
   },
 });
+
+export default React.memo(SOSButton);

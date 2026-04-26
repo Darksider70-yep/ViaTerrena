@@ -1,99 +1,97 @@
-import { Linking, Platform } from 'react-native';
+import { Linking } from 'react-native';
 import * as SMS from 'expo-sms';
 import { getPrimaryEmergencyNumber } from './emergencyNumbers';
-import { buildEmergencyMessage } from '../utils/locationShare';
 
-export interface PersonalContact {
+export interface EmergencyContact {
   id: string;
   name: string;
   phone: string;
-  relationship: string;
-  addedAt: number;
+  relation: string;
+  avatarInitials: string;
 }
 
-export interface SOSPayload {
-  coords: { latitude: number; longitude: number };
+export type PersonalContact = EmergencyContact;
+
+export interface SOSTriggerPayload {
+  userCoords: { latitude: number; longitude: number };
   countryCode: string;
-  personalContacts: PersonalContact[];
+  personalContacts: EmergencyContact[];
+}
+
+export interface SOSResult {
+  dialledNumber: string;
+  smsSentCount: number;
+  whatsappOpened: boolean;
+  locationShareUrl: string;
 }
 
 /**
- * Call the primary emergency number for the detected country
+ * Orchestrates the full SOS trigger sequence
  */
-export async function callEmergencyNumber(countryCode: string): Promise<void> {
+export async function triggerSOS(payload: SOSTriggerPayload): Promise<SOSResult> {
+  const { userCoords, countryCode, personalContacts } = payload;
+  const lat = userCoords.latitude;
+  const lng = userCoords.longitude;
+
+  // Step 1 — Build location share URL (synchronous, no network)
+  const mapsUrl = `https://maps.google.com/?q=${lat},${lng}`;
+  const now = new Date();
+  const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}, ${now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}`;
+  
+  const message = `🚨 EMERGENCY — ViaTerrena Alert\n\nI've been in a road accident and need help.\n\n📍 My location:\n${mapsUrl}\n\n⏰ Time: ${timeStr}\n\nPlease call emergency services or come to my location immediately.\n\n— Sent via ViaTerrena`;
+
+  console.log('[ViaTerrena][SOS] Starting trigger sequence...');
+
+  // Step 2 — Dial primary emergency number IMMEDIATELY (before anything else)
+  const emergencyNumber = getPrimaryEmergencyNumber(countryCode);
+  console.log(`[ViaTerrena][SOS] Step 2: Dialling ${emergencyNumber}`);
+  
+  // We wrap the rest in non-blocking try-catch as per rules
+  let smsSentCount = 0;
+  let whatsappOpened = false;
+
   try {
-    const primary = getPrimaryEmergencyNumber(countryCode);
-    const cleanNumber = primary.replace(/\s/g, '');
-    await Linking.openURL(`tel:${cleanNumber}`);
+    await Linking.openURL(`tel:${emergencyNumber}`);
   } catch (error) {
-    console.error('[ViaTerrena][SOS] Error calling emergency number:', error);
+    console.error('[ViaTerrena][SOS] Failed to dial number', error);
   }
-}
 
-/**
- * Send SMS to all personal contacts with location
- */
-export async function sendLocationSMS(
-  contacts: PersonalContact[],
-  coords: { latitude: number; longitude: number }
-): Promise<void> {
-  try {
-    const isAvailable = await SMS.isAvailableAsync();
-    if (!isAvailable) {
-      console.warn('[ViaTerrena][SOS] SMS is not available on this device');
-      return;
+  // Step 3 — Send SMS to all personal contacts (parallel, non-blocking)
+  if (personalContacts.length > 0) {
+    try {
+      console.log(`[ViaTerrena][SOS] Step 3: Sending SMS to ${personalContacts.length} contacts`);
+      const isSmsAvailable = await SMS.isAvailableAsync();
+      if (isSmsAvailable) {
+        const phoneNumbers = personalContacts.map(c => c.phone);
+        const { result } = await SMS.sendSMSAsync(phoneNumbers, message);
+        if (result === 'sent') {
+          smsSentCount = personalContacts.length;
+        }
+      }
+    } catch (error) {
+      console.error('[ViaTerrena][SOS] SMS Step failed', error);
     }
-
-    const phoneNumbers = contacts.map(c => c.phone).filter(p => !!p);
-    if (phoneNumbers.length === 0) return;
-
-    const message = buildEmergencyMessage(coords.latitude, coords.longitude);
-    await SMS.sendSMSAsync(phoneNumbers, message);
-  } catch (error) {
-    console.error('[ViaTerrena][SOS] Error sending SMS:', error);
   }
-}
 
-/**
- * Share location via WhatsApp
- */
-export async function shareViaWhatsApp(
-  coords: { latitude: number; longitude: number },
-  contactPhone?: string
-): Promise<void> {
+  // Step 4 — Attempt WhatsApp share as supplement
   try {
-    const message = buildEmergencyMessage(coords.latitude, coords.longitude);
-    const encodedMsg = encodeURIComponent(message);
-    
-    let url = `whatsapp://send?text=${encodedMsg}`;
-    if (contactPhone) {
-      const cleanPhone = contactPhone.replace(/\D/g, '');
-      url = `whatsapp://send?phone=${cleanPhone}&text=${encodedMsg}`;
-    }
-
-    const canOpen = await Linking.canOpenURL(url);
+    console.log('[ViaTerrena][SOS] Step 4: Attempting WhatsApp share');
+    const whatsappUrl = `whatsapp://send?text=${encodeURIComponent(message)}`;
+    const canOpen = await Linking.canOpenURL(whatsappUrl);
     if (canOpen) {
-      await Linking.openURL(url);
-    } else {
-      // Fallback to generic share or just log
-      console.warn('[ViaTerrena][SOS] WhatsApp is not installed');
+      await Linking.openURL(whatsappUrl);
+      whatsappOpened = true;
     }
   } catch (error) {
-    console.error('[ViaTerrena][SOS] Error sharing via WhatsApp:', error);
+    console.error('[ViaTerrena][SOS] WhatsApp Step failed', error);
   }
-}
 
-/**
- * Execute full SOS sequence — call + SMS simultaneously
- */
-export async function triggerFullSOS(payload: SOSPayload): Promise<void> {
-  console.log('[ViaTerrena][SOS] Executing full SOS sequence');
-  
-  // Call immediately (don't await to ensure it fires)
-  callEmergencyNumber(payload.countryCode);
-  
-  // Send SMS in parallel
-  if (payload.personalContacts.length > 0) {
-    sendLocationSMS(payload.personalContacts, payload.coords);
-  }
+  // Step 5 — Return result
+  console.log('[ViaTerrena][SOS] Sequence complete');
+  return {
+    dialledNumber: emergencyNumber,
+    smsSentCount,
+    whatsappOpened,
+    locationShareUrl: mapsUrl,
+  };
 }

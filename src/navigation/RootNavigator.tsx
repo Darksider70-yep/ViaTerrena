@@ -11,7 +11,15 @@ import SOSScreen from '../screens/SOSScreen';
 import VehicleHelpScreen from '../screens/VehicleHelpScreen';
 import ContactsScreen from '../screens/ContactsScreen';
 
-const Tab = createBottomTabNavigator();
+export type RootTabParamList = {
+  Home: undefined;
+  Nearby: undefined;
+  SOS: undefined;
+  Vehicle: undefined;
+  Contacts: undefined;
+};
+
+const Tab = createBottomTabNavigator<RootTabParamList>();
 
 export default function RootNavigator() {
   const { theme, colors, isDarkMode } = useTheme();

@@ -8,3 +8,14 @@ export const SERVICE_CATEGORIES = [
   { id: 'puncture_shop', label: 'Tyre Repair',      color: colors.puncture,   emoji: '🔧' },
   { id: 'showroom',      label: 'Showrooms',        color: colors.showroom,   emoji: '🏪' },
 ];
+
+export const EMERGENCY_EMOJI_MAP: Record<string, string> = {
+  police: '🚔', fire: '🔥', ambulance: '🚑',
+  emergency: '📞', highway: '🛣️', womenHelpline: '👩',
+};
+
+export const EMERGENCY_COLOR_MAP: Record<string, string> = {
+  police: colors.police, fire: '#E25C1A',
+  ambulance: colors.primary, emergency: colors.primary,
+  highway: colors.towing,
+};
