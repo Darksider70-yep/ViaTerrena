@@ -27,7 +27,13 @@
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE",
         "VIBRATE"
-      ]
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "GOOGLE_PLACES_API_KEY"
+        }
+      }
+
     },
     "ios": {
       "supportsTablet": false,
