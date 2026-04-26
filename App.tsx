@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -21,7 +21,7 @@ function AppContent({ onboardingSeen, setOnboardingSeen }: {
   return (
     <NavigationContainer>
       <StatusBar style="dark" />
-      {onboardingSeen ? (
+      {Boolean(onboardingSeen) ? (
         <RootNavigator />
       ) : (
         <OnboardingScreen onComplete={() => setOnboardingSeen(true)} />
@@ -39,9 +39,9 @@ export default function App() {
     const init = async () => {
       try {
         const version = await AsyncStorage.getItem('via-terrena-storage-version');
-        if (version !== '4') {
+        if (version !== '6') {
           await AsyncStorage.removeItem('via-terrena-storage');
-          await AsyncStorage.setItem('via-terrena-storage-version', '4');
+          await AsyncStorage.setItem('via-terrena-storage-version', '6');
         }
 
         const seen = await AsyncStorage.getItem('onboarding_seen');
@@ -61,7 +61,7 @@ export default function App() {
   if (!hydrated) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' }}>
-        <ActivityIndicator size="large" color="#E24B4A" />
+        <Text style={{ color: '#E24B4A', fontSize: 18, fontWeight: '700' }}>INITIALIZING...</Text>
       </View>
     );
   }

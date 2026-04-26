@@ -72,49 +72,14 @@ export default function RootNavigator() {
           ),
         }}
       />
+      {/* Temporarily disabled to isolate crash */}
+      {/* 
       <Tab.Screen
         name="Nearby"
         component={NearbyScreen}
-        listeners={{ tabPress: light }}
-        options={{
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'location' : 'location-outline'} size={24} color={color} />
-          ),
-        }}
+        ...
       />
-      <Tab.Screen
-        name="SOS"
-        component={SOSScreen}
-        listeners={{ tabPress: warn }}
-        options={{
-          tabBarLabel: '',
-          tabBarIcon: () => (
-            <View style={[styles.sosButton, { backgroundColor: colors.primary, borderColor: theme.surface }]}>
-              <Ionicons name="alert-circle" size={32} color="#FFFFFF" />
-            </View>
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Vehicle"
-        component={VehicleHelpScreen}
-        listeners={{ tabPress: light }}
-        options={{
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'car' : 'car-outline'} size={24} color={color} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Contacts"
-        component={ContactsScreen}
-        listeners={{ tabPress: light }}
-        options={{
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'people' : 'people-outline'} size={24} color={color} />
-          ),
-        }}
-      />
+      */}
     </Tab.Navigator>
   );
 }

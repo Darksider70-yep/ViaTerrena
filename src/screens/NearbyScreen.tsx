@@ -113,7 +113,7 @@ export default function NearbyScreen() {
               <Text style={[
                 styles.radiusText,
                 { color: theme.textSecondary },
-                radiusMeters === opt.value && { color: theme.textPrimary }
+                radiusMeters === opt.value ? { color: theme.textPrimary } : null
               ]}>
                 {opt.label}
               </Text>
@@ -153,8 +153,8 @@ export default function NearbyScreen() {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={[styles.loadingText, { color: theme.textSecondary }]}>Locating you...</Text>
+          <Text style={{ color: colors.primary, fontSize: 16, fontWeight: '700', marginBottom: 12 }}>LOCATING GPS...</Text>
+          <Text style={[styles.loadingText, { color: theme.textSecondary }]}>Finding your current coordinates</Text>
         </View>
       </SafeAreaView>
     );

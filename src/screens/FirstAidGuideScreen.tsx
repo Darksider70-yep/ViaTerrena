@@ -97,14 +97,14 @@ const FirstAidGuideScreen: React.FC = () => {
                 key={cat.id}
                 style={[
                   styles.categoryPill,
-                  activeCategoryId === cat.id && { backgroundColor: cat.color }
+                  activeCategoryId === cat.id ? { backgroundColor: cat.color } : null
                 ]}
                 onPress={() => setActiveCategoryId(cat.id)}
               >
                 <Text style={styles.categoryEmoji}>{cat.emoji}</Text>
                 <Text style={[
                   styles.categoryTitle,
-                  activeCategoryId === cat.id && styles.activeCategoryTitle
+                  activeCategoryId === cat.id ? styles.activeCategoryTitle : null
                 ]}>
                   {cat.title}
                 </Text>

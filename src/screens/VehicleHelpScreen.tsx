@@ -47,7 +47,7 @@ const VehicleHelpScreen: React.FC = () => {
             style={styles.tab} 
             onPress={() => handleTabPress('towing', 0)}
           >
-            <Text style={[styles.tabText, activeTab === 'towing' && styles.activeTabText]}>
+            <Text style={[styles.tabText, activeTab === 'towing' ? styles.activeTabText : null]}>
               Towing ({getCount('towing')})
             </Text>
           </TouchableOpacity>
@@ -55,7 +55,7 @@ const VehicleHelpScreen: React.FC = () => {
             style={styles.tab} 
             onPress={() => handleTabPress('puncture_shop', 1)}
           >
-            <Text style={[styles.tabText, activeTab === 'puncture_shop' && styles.activeTabText]}>
+            <Text style={[styles.tabText, activeTab === 'puncture_shop' ? styles.activeTabText : null]}>
               Tyre ({getCount('puncture_shop')})
             </Text>
           </TouchableOpacity>
@@ -63,7 +63,7 @@ const VehicleHelpScreen: React.FC = () => {
             style={styles.tab} 
             onPress={() => handleTabPress('showroom', 2)}
           >
-            <Text style={[styles.tabText, activeTab === 'showroom' && styles.activeTabText]}>
+            <Text style={[styles.tabText, activeTab === 'showroom' ? styles.activeTabText : null]}>
               Showroom ({getCount('showroom')})
             </Text>
           </TouchableOpacity>

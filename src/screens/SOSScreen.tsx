@@ -89,7 +89,7 @@ const SOSScreen: React.FC = () => {
   if (!userCoords) {
     return (
       <SafeAreaView style={[styles.container, styles.centered]}>
-        <ActivityIndicator size="large" color={colors.sosBackground} />
+        <Text style={{ color: colors.sosBackground, fontSize: 18, fontWeight: '800', marginBottom: 12 }}>GPS LOCKING...</Text>
         <Text style={styles.loadingText}>Waiting for GPS lock...</Text>
       </SafeAreaView>
     );
