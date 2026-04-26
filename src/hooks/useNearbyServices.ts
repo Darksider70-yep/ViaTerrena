@@ -140,7 +140,18 @@ export function useNearbyServices(radiusMeters: number = 10000): UseNearbyServic
   }, [isOnline, userCoords]);
 
   const allPlaces = useMemo(() => {
-    return Object.values(cachedNearby).flat();
+    const flatList = Object.values(cachedNearby).flat();
+    const uniqueMap = new Map<string, NearbyPlace>();
+    
+    flatList.forEach((place) => {
+      // If duplicate, keep the one with a more specific category if possible
+      // or just keep the first one found.
+      if (!uniqueMap.has(place.placeId)) {
+        uniqueMap.set(place.placeId, place);
+      }
+    });
+    
+    return Array.from(uniqueMap.values());
   }, [cachedNearby]);
 
   const filteredPlaces = useMemo(() => {

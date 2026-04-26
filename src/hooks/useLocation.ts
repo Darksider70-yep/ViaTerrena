@@ -9,6 +9,7 @@ export function useLocation() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
     let subscription: LocationSubscription | null = null;
     
     async function initLocation() {
@@ -24,22 +25,27 @@ export function useLocation() {
         return;
       }
 
-      // 1. Get initial location
-      const location = await getCurrentLocation();
-      if (location && mounted) {
-        setUserCoords({ latitude: location.latitude, longitude: location.longitude });
-        const code = await detectCountryCode(location.latitude, location.longitude);
-        setCountryCode(code);
-        setLoading(false);
-      }
+      // 1. Get initial location (try last known first - optimized in LocationService)
+      getCurrentLocation().then(location => {
+        if (location && mounted) {
+          setUserCoords({ latitude: location.latitude, longitude: location.longitude });
+          detectCountryCode(location.latitude, location.longitude).then(code => {
+            if (mounted) setCountryCode(code);
+          });
+          setLoading(false);
+        }
+      });
 
-      // 2. Start watching for changes
-      subscription = await watchLocation((coords) => {
+      // 2. Start watching for changes immediately
+      watchLocation((coords) => {
         if (mounted) {
           setUserCoords(coords);
-          // Optional: update country code if they move between borders
-          detectCountryCode(coords.latitude, coords.longitude).then(c => setCountryCode(c));
+          detectCountryCode(coords.latitude, coords.longitude).then(c => {
+            if (mounted) setCountryCode(c);
+          });
         }
+      }).then(sub => {
+        subscription = sub;
       });
     }
 
@@ -47,7 +53,9 @@ export function useLocation() {
 
     return () => {
       mounted = false;
-      if (subscription) subscription.remove();
+      if (subscription) {
+        subscription.remove();
+      }
     };
   }, []);
 

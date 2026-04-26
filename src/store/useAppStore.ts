@@ -73,7 +73,7 @@ export const useAppStore = create<AppState>()(
       setLastSOSTrigger: (ts) => set({ lastSOSTrigger: ts }),
     }),
     {
-      name: 'via-terrena-storage-v4',
+      name: 'via-terrena-storage-v5',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         cachedNearby: state.cachedNearby,

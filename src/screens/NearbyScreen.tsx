@@ -70,6 +70,7 @@ export default function NearbyScreen() {
     towing: colors.towing,
     puncture_shop: colors.puncture,
     showroom: colors.showroom,
+    pharmacy: colors.pharmacy,
   };
 
   const getMarkerColor = useCallback((category: string) => {

@@ -17,7 +17,20 @@ export async function getCurrentLocation(): Promise<{
   accuracy: number | null;
 } | null> {
   try {
-    const location = await Location.getCurrentPositionAsync({});
+    // 1. Try to get last known position first (nearly instant)
+    const lastKnown = await Location.getLastKnownPositionAsync({});
+    if (lastKnown) {
+      return {
+        latitude: lastKnown.coords.latitude,
+        longitude: lastKnown.coords.longitude,
+        accuracy: lastKnown.coords.accuracy,
+      };
+    }
+
+    // 2. If no last known, request current position with balanced accuracy (faster than highest)
+    const location = await Location.getCurrentPositionAsync({
+      accuracy: Location.Accuracy.Balanced,
+    });
     return {
       latitude: location.coords.latitude,
       longitude: location.coords.longitude,
