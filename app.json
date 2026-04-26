@@ -39,7 +39,7 @@
       }
     },
     "extra": {
-      "googlePlacesApiKey": "AIzaSyDZ4AduhOX82DJC4f0NFMa9ZVZuATiINT4",
+      "googlePlacesApiKey": "GOOGLE_PLACES_API_KEY",
       "eas": {
         "projectId": "e889bf15-d903-458d-aeb6-94515e03fc7e"
       }
