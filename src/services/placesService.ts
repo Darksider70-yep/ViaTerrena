@@ -50,7 +50,7 @@ export async function fetchNearbyServices(
     const mapQuery = CATEGORY_QUERY_MAP[category];
     const url = 'https://maps.googleapis.com/maps/api/place/nearbysearch/json';
     
-    const params: any = {
+    const params: Record<string, string | number | boolean> = {
       location: `${latitude},${longitude}`,
       radius: radiusMeters,
       key: apiKey,
@@ -66,7 +66,14 @@ export async function fetchNearbyServices(
     }
     const results = response.data.results || [];
 
-    const places: NearbyPlace[] = results.map((result: any) => {
+    const places: NearbyPlace[] = results.map((result: {
+      place_id: string;
+      name: string;
+      vicinity: string;
+      geometry?: { location?: { lat: number; lng: number } };
+      opening_hours?: { open_now: boolean };
+      rating?: number;
+    }) => {
       const placeLat = result.geometry?.location?.lat;
       const placeLng = result.geometry?.location?.lng;
       const distanceKm = calculateDistance(latitude, longitude, placeLat, placeLng);

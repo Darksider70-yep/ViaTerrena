@@ -10,6 +10,8 @@ import OnboardingScreen from './src/screens/OnboardingScreen';
 import { useLocation } from './src/hooks/useLocation';
 import { useNetworkStatus } from './src/hooks/useNetworkStatus';
 import { ToastHost } from './src/utils/toast';
+import { useAppStore } from './src/store/useAppStore';
+import { colors } from './src/constants/colors';
 
 function AppContent({ onboardingSeen, setOnboardingSeen }: { 
   onboardingSeen: boolean, 
@@ -36,32 +38,25 @@ export default function App() {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    const init = async () => {
-      try {
-        const version = await AsyncStorage.getItem('via-terrena-storage-version');
-        if (version !== '7') {
-          await AsyncStorage.removeItem('via-terrena-storage');
-          await AsyncStorage.setItem('via-terrena-storage-version', '7');
-        }
+    const unsub = useAppStore.persist.onFinishHydration(() => setHydrated(true));
+    if (useAppStore.persist.hasHydrated()) setHydrated(true);
 
-        const seen = await AsyncStorage.getItem('onboarding_seen');
-        if (seen === 'true') {
-          setOnboardingSeen(true);
-        }
-      } catch (e) {
-        console.warn('Init error', e);
-      } finally {
-        setHydrated(true);
+    const checkOnboarding = async () => {
+      const seen = await AsyncStorage.getItem('onboarding_seen');
+      if (seen === 'true') {
+        setOnboardingSeen(true);
       }
     };
-
-    init();
+    
+    checkOnboarding();
+    return unsub;
   }, []);
 
   if (!hydrated) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' }}>
-        <Text style={{ color: '#E24B4A', fontSize: 18, fontWeight: '700' }}>INITIALIZING...</Text>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.primary }}>
+        <Text style={{ color: '#FFFFFF', fontSize: 24, fontWeight: '900', letterSpacing: 2 }}>VIATERRENA</Text>
+        <ActivityIndicator size="large" color="#FFFFFF" style={{ marginTop: 24 }} />
       </View>
     );
   }

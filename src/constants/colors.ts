@@ -1,6 +1,6 @@
 export const colors = {
   // Brand & Action
-  primary:       '#FF3B30',
+  primary:       '#E24B4A',
   secondary:     '#007AFF',
   accent:        '#5856D6',
   
@@ -33,4 +33,8 @@ export const colors = {
   warning:       '#FFCC00',
   danger:        '#FF3B30',
   info:          '#5AC8FA',
+  incidentReporter: '#BA7517',
+  onboarding1: '#E24B4A',
+  onboarding2: '#1D9E75',
+  onboarding3: '#185FA5',
 };

@@ -1,6 +1,7 @@
 import React from 'react';
 import { TouchableOpacity, View, Text, StyleSheet, Linking, useWindowDimensions } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import { colors } from '../constants/colors';
 
 interface QuickDialCardProps {
   label: string;
@@ -71,7 +72,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#8E8E93',
+    color: colors.textSecondary,
     textTransform: 'capitalize',
   },
   number: {

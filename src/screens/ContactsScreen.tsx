@@ -57,8 +57,9 @@ const ContactsScreen: React.FC = () => {
         await addContact(data);
       }
       setFormVisible(false);
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to save contact');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to save contact';
+      Alert.alert('Error', message);
     }
   };
 

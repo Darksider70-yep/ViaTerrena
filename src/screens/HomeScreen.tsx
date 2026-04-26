@@ -80,13 +80,13 @@ const HomeScreen: React.FC = () => {
           accessibilityRole="button"
         >
           <View style={styles.sosIconCircle}>
-            <Ionicons name="alert-circle" size={32} color="#E24B4A" />
+            <Ionicons name="alert-circle" size={32} color={colors.primary} />
           </View>
           <View style={styles.sosTextContainer}>
             <Text style={styles.sosTitle}>Need emergency help?</Text>
             <Text style={styles.sosSubtitle}>Tap SOS to alert services + contacts</Text>
           </View>
-          <Ionicons name="chevron-forward" size={24} color="#E24B4A" />
+          <Ionicons name="chevron-forward" size={24} color={colors.primary} />
         </TouchableOpacity>
 
         {/* Quick Dial Grid */}
@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
   brand: {
     fontSize: 24,
     fontWeight: '900',
-    color: '#E24B4A',
+    color: colors.primary,
   },
   locationBadge: {
     flexDirection: 'row',
@@ -235,9 +235,9 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#E24B4A',
+    borderColor: colors.primary,
     elevation: 2,
-    shadowColor: '#E24B4A',
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -360,7 +360,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#BA7517',
+    backgroundColor: colors.incidentReporter,
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 8,

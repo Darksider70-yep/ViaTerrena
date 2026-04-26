@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ServiceCategory, NearbyPlace } from '../services/placesService';
+import { EmergencyContact } from '../services/SOSService';
 
 interface AppState {
   // Location
@@ -17,7 +18,7 @@ interface AppState {
   // Cache
   cachedNearby: Record<ServiceCategory, NearbyPlace[]>;
   cacheTimestamp: number | null;
-  personalContacts: any[];
+  personalContacts: EmergencyContact[];
   lastSOSTrigger: number | null;
 
   // Actions
@@ -28,7 +29,7 @@ interface AppState {
   setOnline: (online: boolean) => void;
   setCachedNearby: (category: ServiceCategory, places: NearbyPlace[]) => void;
   toggleDarkMode: () => void;
-  setPersonalContacts: (contacts: any[]) => void;
+  setPersonalContacts: (contacts: EmergencyContact[]) => void;
   setLastSOSTrigger: (ts: number) => void;
 }
 

@@ -19,7 +19,13 @@ import { colors } from '../constants/colors';
 import { useAppStore } from '../store/useAppStore';
 import { useEmergencyContacts } from '../hooks/useEmergencyContacts';
 import { getPrimaryEmergencyNumber } from '../services/emergencyNumbers';
-import { triggerSOS, SOSResult } from '../services/SOSService';
+import { 
+  triggerSOS, 
+  SOSResult, 
+  generateSOSMessage, 
+  shareViaWhatsApp, 
+  shareViaSMS 
+} from '../services/SOSService';
 import SOSButton from '../components/SOSButton';
 import SOSCountdown from '../components/SOSCountdown';
 import { COUNTRY_NAMES, COUNTRY_FLAGS } from '../utils/countryNames';
@@ -73,6 +79,25 @@ const SOSScreen: React.FC = () => {
     }).start(({ finished }) => {
       if (finished) setSOSResult(null);
     });
+  };
+
+  const handleWhatsAppShare = async () => {
+    if (!userCoords) return;
+    const message = generateSOSMessage(userCoords.latitude, userCoords.longitude);
+    const success = await shareViaWhatsApp(message);
+    if (!success) showToast('WhatsApp not installed', 'error');
+  };
+
+  const handleSMSShare = async () => {
+    if (!userCoords) return;
+    const message = generateSOSMessage(userCoords.latitude, userCoords.longitude);
+    const phoneNumbers = contacts.map(c => c.phone);
+    if (phoneNumbers.length === 0) {
+      showToast('Add emergency contacts first', 'info');
+      return;
+    }
+    const success = await shareViaSMS(phoneNumbers, message);
+    if (!success) showToast('Could not send SMS', 'error');
   };
 
   const countries = Object.keys(emergencyNumbersData).map((code) => ({
@@ -129,11 +154,11 @@ const SOSScreen: React.FC = () => {
         </View>
 
         <View style={styles.shareSection}>
-          <TouchableOpacity style={styles.shareBtn} onPress={() => handleCountdownComplete()}>
+          <TouchableOpacity style={styles.shareBtn} onPress={handleWhatsAppShare}>
             <Ionicons name="logo-whatsapp" size={20} color="#25D366" />
             <Text style={styles.shareBtnText}>Share via WhatsApp</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.shareBtn, { backgroundColor: '#F0F0F0', borderWidth: 0 }]} onPress={() => handleCountdownComplete()}>
+          <TouchableOpacity style={[styles.shareBtn, { backgroundColor: '#F0F0F0', borderWidth: 0 }]} onPress={handleSMSShare}>
             <Ionicons name="chatbubble-ellipses" size={20} color={colors.textPrimary} />
             <Text style={[styles.shareBtnText, { color: colors.textPrimary }]}>Share via SMS</Text>
           </TouchableOpacity>

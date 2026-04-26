@@ -60,6 +60,15 @@
           "critical": false,
           "doList": ["Apply 5–8cm above the wound", "Tighten until bleeding stops", "Note the exact time applied"],
           "dontList": ["Use a tourniquet on the neck, chest, or abdomen", "Remove the tourniquet once applied"]
+        },
+        {
+          "id": "b3",
+          "title": "Internal Bleeding",
+          "summary": "Recognise the signs of hidden bleeding",
+          "detail": "Internal bleeding is common in high-impact accidents. Watch for: bruising, swelling, or pain in the abdomen; vomiting blood; bleeding from ears, nose, or mouth; signs of shock without visible bleeding. Keep the person warm, still, and calm while waiting for professional help.",
+          "critical": true,
+          "doList": ["Check for bruising on the chest or abdomen", "Monitor for signs of shock", "Keep the person calm and warm"],
+          "dontList": ["Give any food or fluids", "Allow the person to walk around"]
         }
       ]
     },
@@ -138,6 +147,15 @@
           "critical": true,
           "doList": ["Keep the person absolutely still", "Talk calmly to keep them conscious", "Support the head in the position found"],
           "dontList": ["Twist or bend the neck", "Drag the person", "Remove a crash helmet unless airway is blocked"]
+        },
+        {
+          "id": "sp2",
+          "title": "Manual Stabilisation",
+          "summary": "Hold the head still and in line",
+          "detail": "If you must wait for a long time, use your hands to gently support the person's head on either side, keeping it in line with their spine. Do not try to straighten the neck; just hold it in the position you found it. Reassure the person and tell them not to nod or shake their head in response to questions.",
+          "critical": false,
+          "doList": ["Hold the head gently with both hands", "Keep the head in line with the spine", "Ask 'yes/no' questions to prevent head movement"],
+          "dontList": ["Use a neck collar if not trained", "Straighten the neck"]
         }
       ]
     },

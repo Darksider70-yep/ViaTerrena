@@ -7,6 +7,7 @@ import {
   LayoutAnimation,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { colors } from '../constants/colors';
 
 
 const EmergencyInfoCard: React.FC = () => {
@@ -35,13 +36,13 @@ const EmergencyInfoCard: React.FC = () => {
         activeOpacity={0.7}
       >
         <View style={styles.titleRow}>
-          <Ionicons name="time" size={24} color="#185FA5" />
+          <Ionicons name="time" size={24} color={colors.onboarding3} />
           <Text style={styles.title}>Golden Hour — First 60 Seconds</Text>
         </View>
         <Ionicons 
           name={expanded ? "chevron-up" : "chevron-down"} 
           size={20} 
-          color="#185FA5" 
+          color={colors.onboarding3} 
         />
       </TouchableOpacity>
 
@@ -63,7 +64,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#E8F5FF',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#185FA5',
+    borderColor: colors.onboarding3,
     marginHorizontal: 24,
     overflow: 'hidden',
     marginBottom: 20,
@@ -82,7 +83,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 15,
     fontWeight: '800',
-    color: '#185FA5',
+    color: colors.onboarding3,
     marginLeft: 10,
   },
   content: {
@@ -96,7 +97,7 @@ const styles = StyleSheet.create({
   },
   tipText: {
     fontSize: 14,
-    color: '#185FA5',
+    color: colors.onboarding3,
     lineHeight: 20,
     fontWeight: '500',
   },

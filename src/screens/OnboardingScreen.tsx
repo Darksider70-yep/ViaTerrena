@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   useWindowDimensions,
   Animated,
+  ViewToken,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
@@ -21,23 +22,24 @@ const slides = [
     emoji: '🚨',
     title: 'Emergency Help, Instantly',
     subtitle: 'One tap to call emergency services, share your location, and alert your contacts — no matter where you are.',
-    color: '#E24B4A',
+    color: colors.onboarding1,
   },
   {
     id: '2',
     emoji: '🗺️',
     title: 'Find Help Near You',
     subtitle: 'Instantly locate hospitals, ambulance services, police stations, towing, and tyre repair shops around you.',
-    color: '#1D9E75',
+    color: colors.onboarding2,
   },
   {
     id: '3',
     emoji: '📡',
     title: 'Works Offline Too',
     subtitle: 'Cached data and emergency contacts stay available even without internet — because accidents don\'t wait for signal.',
-    color: '#185FA5',
+    color: colors.onboarding3,
   },
 ];
+
 
 interface OnboardingScreenProps {
   onComplete: () => void;
@@ -66,7 +68,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
     flatListRef.current?.scrollToIndex({ index: slides.length - 1 });
   };
 
-  const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
+  const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
     if (viewableItems.length > 0) {
       setCurrentIndex(viewableItems[0].index);
     }

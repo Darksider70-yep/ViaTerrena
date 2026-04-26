@@ -26,6 +26,52 @@ export interface SOSResult {
 }
 
 /**
+ * Generates the emergency message with location
+ */
+export function generateSOSMessage(latitude: number, longitude: number): string {
+  const mapsUrl = `https://maps.google.com/?q=${latitude},${longitude}`;
+  const now = new Date();
+  const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}, ${now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}`;
+  
+  return `🚨 EMERGENCY — ViaTerrena Alert\n\nI've been in a road accident and need help.\n\n📍 My location:\n${mapsUrl}\n\n⏰ Time: ${timeStr}\n\nPlease call emergency services or come to my location immediately.\n\n— Sent via ViaTerrena`;
+}
+
+/**
+ * Shares SOS via WhatsApp
+ */
+export async function shareViaWhatsApp(message: string): Promise<boolean> {
+  try {
+    const whatsappUrl = `whatsapp://send?text=${encodeURIComponent(message)}`;
+    const canOpen = await Linking.canOpenURL(whatsappUrl);
+    if (canOpen) {
+      await Linking.openURL(whatsappUrl);
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error('[ViaTerrena][SOS] WhatsApp share failed', error);
+    return false;
+  }
+}
+
+/**
+ * Shares SOS via SMS
+ */
+export async function shareViaSMS(phoneNumbers: string[], message: string): Promise<boolean> {
+  try {
+    const isSmsAvailable = await SMS.isAvailableAsync();
+    if (isSmsAvailable) {
+      const { result } = await SMS.sendSMSAsync(phoneNumbers, message);
+      return result === 'sent';
+    }
+    return false;
+  } catch (error) {
+    console.error('[ViaTerrena][SOS] SMS share failed', error);
+    return false;
+  }
+}
+
+/**
  * Orchestrates the full SOS trigger sequence
  */
 export async function triggerSOS(payload: SOSTriggerPayload): Promise<SOSResult> {
@@ -33,12 +79,8 @@ export async function triggerSOS(payload: SOSTriggerPayload): Promise<SOSResult>
   const lat = userCoords.latitude;
   const lng = userCoords.longitude;
 
-  // Step 1 — Build location share URL (synchronous, no network)
+  const message = generateSOSMessage(lat, lng);
   const mapsUrl = `https://maps.google.com/?q=${lat},${lng}`;
-  const now = new Date();
-  const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}, ${now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}`;
-  
-  const message = `🚨 EMERGENCY — ViaTerrena Alert\n\nI've been in a road accident and need help.\n\n📍 My location:\n${mapsUrl}\n\n⏰ Time: ${timeStr}\n\nPlease call emergency services or come to my location immediately.\n\n— Sent via ViaTerrena`;
 
   console.log('[ViaTerrena][SOS] Starting trigger sequence...');
 
@@ -74,17 +116,7 @@ export async function triggerSOS(payload: SOSTriggerPayload): Promise<SOSResult>
   }
 
   // Step 4 — Attempt WhatsApp share as supplement
-  try {
-    console.log('[ViaTerrena][SOS] Step 4: Attempting WhatsApp share');
-    const whatsappUrl = `whatsapp://send?text=${encodeURIComponent(message)}`;
-    const canOpen = await Linking.canOpenURL(whatsappUrl);
-    if (canOpen) {
-      await Linking.openURL(whatsappUrl);
-      whatsappOpened = true;
-    }
-  } catch (error) {
-    console.error('[ViaTerrena][SOS] WhatsApp Step failed', error);
-  }
+  whatsappOpened = await shareViaWhatsApp(message);
 
   // Step 5 — Return result
   console.log('[ViaTerrena][SOS] Sequence complete');

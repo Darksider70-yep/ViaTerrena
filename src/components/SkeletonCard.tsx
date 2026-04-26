@@ -1,11 +1,11 @@
 import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Animated } from 'react-native';
+import { View, StyleSheet, Animated, ViewStyle, StyleProp, DimensionValue } from 'react-native';
 
 interface SkeletonCardProps {
   height?: number;
-  width?: any;
+  width?: DimensionValue;
   borderRadius?: number;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 const SkeletonCard: React.FC<SkeletonCardProps> = ({

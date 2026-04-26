@@ -1,51 +1,100 @@
-# ViaTerrena 🌍
+# ViaTerrena 🚨
 
-ViaTerrena is a premium React Native (Expo) mobile application designed to provide instant, location-aware access to emergency services and roadside assistance.
+> Latin: *via* (road) + *terrena* (earthly) — "Earthly Road"
 
-## 🚀 Key Features
-- **🚨 Advanced SOS Panic System**: One-tap trigger with a 3-second safety window, animated pulse rings, and automatic dialing of local emergency numbers (112, 100, 108, etc.).
-- **📍 Pro Map Integration**: Live map with custom themed markers for hospitals, police stations, and mechanical help.
-- **🔧 Vehicle Help Hub**: Specialized tabs for Towing, Tyre Repair, and Showrooms, pulling data from high-speed local caches.
-- **👤 Emergency Contacts**: Manage up to 5 personal contacts who receive your location via SMS and WhatsApp during an SOS trigger.
-- **🛰️ Location Sharing**: Instantly share a Google Maps link of your precise location with one tap.
-- **📶 Offline Reliability**: Pre-loaded emergency numbers for over 20 countries and local caching of nearby services.
+Emergency road assistance platform providing instant access to life-saving
+services during road accidents. Built for the RoadSoS challenge.
 
-## 🛠 Tech Stack
-- **Framework**: Expo (React Native) with TypeScript
-- **State Management**: Zustand (with Persistence via AsyncStorage)
-- **Navigation**: React Navigation (Bottom Tabs)
-- **Services**: Expo Location, Expo SMS, Google Places API
-- **UI**: Vanilla React Native StyleSheet with a Premium Design System
+## Features
 
-## 📁 Project Structure
-- `src/navigation`: App navigation and tab logic
-- `src/screens`: Feature-specific screens (Home, SOS, Nearby, Vehicle, Contacts)
-- `src/components`: Reusable premium components (SOSButton, ServiceCard, PulseRing)
-- `src/services`: Core logic for SOS, Location, and Places API
-- `src/store`: Global state management with Zustand
-- `src/constants`: Design tokens (Colors, Typography) and configuration
-- `src/hooks`: Custom logic hooks (useSOSTrigger, useNearbyServices, useTheme)
+- **7 service categories**: hospitals, ambulance, police, towing, tyre repair, showrooms
+- **SOS panic button**: 3s countdown → auto-dials country emergency number + SMS contacts
+- **36 countries**: localised emergency numbers auto-detected by GPS
+- **100% offline-capable**: cached services + static first-aid guide + local emergency numbers
+- **First Aid Guide**: 6 categories, 14 steps, DO/DON'T lists — no internet required
+- **Incident Reporter**: timestamped accident log with photo + location, shareable via WhatsApp
+- **Global Places API**: live data for all 7 service types worldwide
 
-## 🏁 Getting Started
+## Tech stack
 
-1. **Install Dependencies**:
-   ```bash
-   npm install
-   ```
+| Layer | Technology |
+|-------|-----------|
+| Framework | React Native + Expo SDK 54 |
+| Navigation | React Navigation v7 (bottom tabs + stack) |
+| Maps | react-native-maps |
+| Location | expo-location |
+| Places data | Google Places Nearby Search API |
+| State | Zustand + AsyncStorage persist |
+| Sharing | expo-sms + Linking (WhatsApp, tel:) |
+| Build | EAS Build (Expo Application Services) |
 
-2. **Configure Environment**:
-   - Rename `.env.example` to `.env`.
-   - Add your `GOOGLE_PLACES_API_KEY`.
+## Setup
 
-3. **Run the App**:
-   ```bash
-   npx expo start
-   ```
+```bash
+git clone https://github.com/Darksider70-yep/ViaTerrena
+cd ViaTerrena
+npm install
+cp .env.example .env
+# Add your Google Places API key to .env
+npx expo start
+```
 
-## 📖 Documentation
-Detailed walkthroughs and task logs are available in the artifact directory:
-- `walkthrough.md`: Summary of recent feature implementations.
-- `task.md`: Checklist of completed work.
+## Environment variables
 
----
-Built with ❤️ for road safety.
+```
+GOOGLE_PLACES_API_KEY=your_key_here
+```
+
+Enable these APIs in Google Cloud Console:
+- Places API (New)
+- Maps SDK for Android
+- Maps SDK for iOS
+- Geocoding API
+
+## Build
+
+```bash
+# Development
+npx expo start
+
+# Android APK
+eas build --platform android --profile preview
+
+# iOS
+eas build --platform ios --profile preview
+```
+
+## Evaluation criteria
+
+| Criterion | Implementation |
+|-----------|---------------|
+| Reliability & data accuracy | Google Places API — verified, real-time data |
+| Number of contacts fetched | Parallel fetch across 7 categories → 40–140 results |
+| Offline functionality | AsyncStorage cache + NetInfo fallback + static data |
+| Innovation | First Aid Guide (offline, searchable) + Incident Reporter |
+| Global integration | 36-country emergency number map + Places API global coverage |
+
+## Emergency numbers coverage
+
+India, USA, UK, Australia, Germany, France, Italy, Spain, Japan, China,
+South Korea, Brazil, Mexico, Argentina, Canada, South Africa, Nigeria,
+Egypt, Saudi Arabia, UAE, Turkey, Russia, Indonesia, Pakistan, Bangladesh,
+Philippines, Malaysia, Singapore, Thailand, New Zealand, Netherlands,
+Sweden, Norway, Switzerland, Portugal, Greece, Poland + DEFAULT (112)
+
+## Project structure
+
+```
+src/
+├── screens/          # HomeScreen, NearbyScreen, SOSScreen, VehicleHelpScreen,
+│                     # ContactsScreen, FirstAidGuideScreen, OnboardingScreen
+├── components/       # SOSButton, ServiceCard, CategoryPill, SkeletonCard,
+│                     # OfflineBanner, FirstAidStep, IncidentReporter, ...
+├── services/         # LocationService, PlacesService, EmergencyNumbers, SOSService
+├── hooks/            # useLocation, useNearbyServices, useNetworkStatus,
+│                     # useEmergencyContacts, useIncidentLog
+├── store/            # useAppStore (Zustand)
+├── data/             # emergencyNumbers.json, firstAidGuide.json
+├── constants/        # colors, typography, spacing, serviceCategories
+└── utils/            # distance (Haversine), storage, toast
+```

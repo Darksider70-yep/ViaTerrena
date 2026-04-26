@@ -26,6 +26,8 @@ import { CustomMapView } from '../components/MapView';
 import { ServiceListItem } from '../components/ServiceListItem';
 import SkeletonCard from '../components/SkeletonCard';
 
+const CARD_HEIGHT = 120;
+
 const RADIUS_OPTIONS = [
   { label: '5km', value: 5000 },
   { label: '10km', value: 10000 },
@@ -49,6 +51,14 @@ export default function NearbyScreen() {
     locationMismatch,
     totalCount,
   } = useNearbyServices(radiusMeters);
+
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    places.forEach(p => {
+      counts[p.category] = (counts[p.category] || 0) + 1;
+    });
+    return counts;
+  }, [places]);
 
   const mapRef = useRef<MapView>(null);
   const listRef = useRef<FlatList>(null);
@@ -128,7 +138,7 @@ export default function NearbyScreen() {
             category="all"
             label="All"
             emoji="🔍"
-            color={colors.textPrimary}
+            color={theme.textPrimary}
             isSelected={selectedCategory === 'all'}
             onPress={() => setSelectedCategory('all')}
           />
@@ -140,7 +150,7 @@ export default function NearbyScreen() {
               emoji={cat.emoji}
               color={cat.color}
               isSelected={selectedCategory === cat.id}
-              count={places.filter(p => p.category === cat.id).length}
+              count={categoryCounts[cat.id] || 0}
               onPress={() => setSelectedCategory(cat.id as any)}
             />
           ))}
@@ -221,7 +231,12 @@ export default function NearbyScreen() {
         initialNumToRender={8}
         maxToRenderPerBatch={10}
         windowSize={5}
-        removeClippedSubviews={Platform.OS === 'android'}
+        removeClippedSubviews={true}
+        getItemLayout={(_, index) => ({
+          length: CARD_HEIGHT,
+          offset: CARD_HEIGHT * index,
+          index,
+        })}
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={
           !loading ? (

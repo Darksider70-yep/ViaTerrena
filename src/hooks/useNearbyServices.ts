@@ -65,7 +65,7 @@ export function useNearbyServices(radiusMeters: number = 10000): UseNearbyServic
 
       const results = await Promise.all(fetchPromises);
       
-      const newCache: any = {};
+      const newCache: Partial<Record<ServiceCategory, NearbyPlace[]>> = {};
       results.forEach((res, index) => {
         const cat = CATEGORIES_TO_FETCH[index];
         setCachedNearby(cat, res);

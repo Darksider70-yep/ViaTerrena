@@ -1,30 +1,52 @@
 {
   "expo": {
     "name": "ViaTerrena",
-    "slug": "ViaTerrena",
+    "slug": "viaterrena",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
-    "ios": {
-      "supportsTablet": true
+      "backgroundColor": "#E24B4A"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#E24B4A"
+      },
+      "package": "com.viaterrena.app",
+      "versionCode": 1,
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "SEND_SMS",
+        "READ_CONTACTS",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "VIBRATE"
+      ]
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.viaterrena.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "ViaTerrena uses your location to find nearby emergency services and share it during an SOS alert.",
+        "NSCameraUsageDescription": "ViaTerrena uses the camera to attach photos to incident reports.",
+        "NSPhotoLibraryUsageDescription": "ViaTerrena accesses your photo library to attach images to incident reports."
       }
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
     "extra": {
-      "googlePlacesApiKey": "GOOGLE_PLACES_API_KEY"
-    }
+      "googlePlacesApiKey": "GOOGLE_PLACES_API_KEY",
+      "eas": {
+        "projectId": "your-eas-project-id"
+      }
+    },
+    "plugins": [
+      "expo-location",
+      "expo-image-picker"
+    ]
   }
 }
