@@ -2,8 +2,9 @@ import { Accelerometer } from 'expo-sensors';
 import { Subscription } from 'expo-sensors/build/Subscription';
 
 // Tuning constants
-const CRASH_THRESHOLD_G = 2.5;       // G-force to trigger (2.5 = hard impact)
-const CONSECUTIVE_HITS_REQUIRED = 2;  // readings above threshold before alert
+const CRASH_THRESHOLD_G = 3.5;       // G-force to trigger (3.5 = major impact)
+const CONSECUTIVE_HITS_REQUIRED = 3;  // readings above threshold before alert
+
 const SAMPLING_INTERVAL_MS = 100;     // read accelerometer every 100ms
 const COOLDOWN_MS = 30000;           // ignore further crashes for 30s after one
 
