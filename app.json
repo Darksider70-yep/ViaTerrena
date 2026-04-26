@@ -39,14 +39,15 @@
       }
     },
     "extra": {
-      "googlePlacesApiKey": "GOOGLE_PLACES_API_KEY",
+      "googlePlacesApiKey": "AIzaSyDZ4AduhOX82DJC4f0NFMa9ZVZuATiINT4",
       "eas": {
-        "projectId": "your-eas-project-id"
+        "projectId": "e889bf15-d903-458d-aeb6-94515e03fc7e"
       }
     },
     "plugins": [
       "expo-location",
       "expo-image-picker"
-    ]
+    ],
+    "owner": "darksider70"
   }
 }
