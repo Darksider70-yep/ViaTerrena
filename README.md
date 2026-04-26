@@ -14,7 +14,9 @@ services during road accidents. Built for the RoadSoS challenge.
 - **100% offline-capable**: cached services + static first-aid guide + local emergency numbers
 - **First Aid Guide**: 6 categories, 14 steps, DO/DON'T lists — no internet required
 - **Incident Reporter**: timestamped accident log with photo + location, shareable via WhatsApp
+- **AI Triage Assistant**: Powered by Google Gemini 2.0 Flash — get instant, calm guidance for road emergencies
 - **Live Google Places API**: 100% real data with zero mock fallback (verified API key required)
+
 
 ## Tech stack
 
@@ -25,7 +27,9 @@ services during road accidents. Built for the RoadSoS challenge.
 | Maps | react-native-maps |
 | Location | expo-location |
 | Places data | Google Places Nearby Search API |
+| AI / LLM | Google Gemini 2.0 Flash (Free Tier) |
 | State | Zustand + AsyncStorage persist |
+
 | Sharing | expo-sms + Linking (WhatsApp, tel:) |
 | Build | EAS Build (Expo Application Services) |
 
@@ -44,7 +48,9 @@ npx expo start
 
 ```
 GOOGLE_PLACES_API_KEY=your_key_here
+GEMINI_API_KEY=your_key_here
 ```
+
 
 Enable these APIs in Google Cloud Console:
 - Places API (New)
@@ -58,15 +64,17 @@ Enable these APIs in Google Cloud Console:
  # Development
  npx expo start
  
-+# Set EAS Secrets (Required for Cloud Builds)
-+eas secret:create --name GOOGLE_PLACES_API_KEY --value "your_key" --type string
-+
- # Android APK
- eas build --platform android --profile preview
- 
- # iOS
- eas build --platform ios --profile preview
- ```
+# Set EAS Secrets (Required for Cloud Builds)
+eas secret:create --name GOOGLE_PLACES_API_KEY --value "your_key" --type string
+eas secret:create --name GEMINI_API_KEY --value "your_key" --type string
+
+# Android APK
+eas build --platform android --profile preview
+
+# iOS
+eas build --platform ios --profile preview
+```
+
 
 
 ## Evaluation criteria
@@ -92,10 +100,11 @@ Sweden, Norway, Switzerland, Portugal, Greece, Poland + DEFAULT (112)
 ```
 src/
 ├── screens/          # HomeScreen, NearbyScreen, SOSScreen, VehicleHelpScreen,
-│                     # ContactsScreen, FirstAidGuideScreen, OnboardingScreen
+│                     # ContactsScreen, FirstAidGuideScreen, OnboardingScreen, TriageScreen
 ├── components/       # SOSButton, ServiceCard, CategoryPill, SkeletonCard,
 │                     # OfflineBanner, FirstAidStep, IncidentReporter, ...
-├── services/         # LocationService, PlacesService, EmergencyNumbers, SOSService
+├── services/         # LocationService, PlacesService, EmergencyNumbers, SOSService, GeminiService
+
 ├── hooks/            # useLocation, useNearbyServices, useNetworkStatus,
 │                     # useEmergencyContacts, useIncidentLog
 ├── store/            # useAppStore (Zustand)

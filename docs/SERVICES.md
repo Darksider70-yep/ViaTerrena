@@ -19,3 +19,11 @@ Interfaces with the Google Places API (Nearby Search) to find essential help.
 - **Category Mapping**: Maps internal types (e.g., `puncture_shop`) to Google search keywords.
 - **Distance Calculation**: Uses the **Haversine Formula** (`utils/distance.ts`) to calculate straight-line distance before the API returns results.
 - **Phone Enrichment**: Performs additional **Place Details** calls for the top 10 results to fetch validated phone numbers for direct calling.
+
+## 4. AI Triage Service (`GeminiService.ts`)
+Powered by Google Gemini 2.0 Flash to provide immediate medical guidance.
+- **System Prompting**: Encapsulates emergency triage expertise to guide users through the "Golden Hour".
+- **Chat Context**: Maintains conversation state to allow follow-up questions during a high-stress event.
+- **Safety Filtering**: Implements customized safety settings to ensure guidance remains helpful and non-harmful.
+- **Fallback Logic**: Provides critical offline/error fallbacks (e.g., "Call 112") if connectivity is lost.
+
