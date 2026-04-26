@@ -27,7 +27,8 @@ even without internet."
 
 ### 4. Nearby Services (2 minutes)
 - Tap Nearby tab — show map loading, markers appearing
-- Point out ResultsCountBadge: "47 services found near you"
+- Point out: "Location is auto-detected and tracked in real-time. If I move, the services refresh automatically."
+- Point out ResultsCountBadge: "47 real services found near you (No mock data fallback)"
 - Tap "Police" pill — map filters to blue markers only
 - Tap a hospital card — show Call + Directions buttons
 - Tap Call — show dialler opens with real number

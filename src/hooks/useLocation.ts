@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { requestLocationPermission, getCurrentLocation } from '../services/LocationService';
+import { requestLocationPermission, getCurrentLocation, watchLocation } from '../services/LocationService';
+import { LocationSubscription } from 'expo-location';
 import { detectCountryCode } from '../services/emergencyNumbers';
 
 export function useLocation() {
@@ -8,7 +9,7 @@ export function useLocation() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    let mounted = true;
+    let subscription: LocationSubscription | null = null;
     
     async function initLocation() {
       setLoading(true);
@@ -23,28 +24,30 @@ export function useLocation() {
         return;
       }
 
+      // 1. Get initial location
       const location = await getCurrentLocation();
-      if (!location) {
-        if (mounted) {
-          setLocationError('Failed to get location');
-          setLoading(false);
-        }
-        return;
-      }
-
-      if (mounted) {
+      if (location && mounted) {
         setUserCoords({ latitude: location.latitude, longitude: location.longitude });
-        
         const code = await detectCountryCode(location.latitude, location.longitude);
         setCountryCode(code);
         setLoading(false);
       }
+
+      // 2. Start watching for changes
+      subscription = await watchLocation((coords) => {
+        if (mounted) {
+          setUserCoords(coords);
+          // Optional: update country code if they move between borders
+          detectCountryCode(coords.latitude, coords.longitude).then(c => setCountryCode(c));
+        }
+      });
     }
 
     initLocation();
 
     return () => {
       mounted = false;
+      if (subscription) subscription.remove();
     };
   }, []);
 

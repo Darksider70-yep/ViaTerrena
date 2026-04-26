@@ -7,13 +7,14 @@ services during road accidents. Built for the RoadSoS challenge.
 
 ## Features
 
-- **7 service categories**: hospitals, ambulance, police, towing, tyre repair, showrooms
+- **8 service categories**: hospitals, ambulance, police, towing, tyre repair, showrooms, pharmacies
+- **Real-time live tracking**: Location auto-detected and updated via `watchLocation` for active service discovery
 - **SOS panic button**: 3s countdown → auto-dials country emergency number + SMS contacts
 - **36 countries**: localised emergency numbers auto-detected by GPS
 - **100% offline-capable**: cached services + static first-aid guide + local emergency numbers
 - **First Aid Guide**: 6 categories, 14 steps, DO/DON'T lists — no internet required
 - **Incident Reporter**: timestamped accident log with photo + location, shareable via WhatsApp
-- **Global Places API**: live data for all 7 service types worldwide
+- **Live Google Places API**: 100% real data with zero mock fallback (verified API key required)
 
 ## Tech stack
 

@@ -66,30 +66,34 @@ export async function fetchNearbyServices(
     }
     const results = response.data.results || [];
 
-    const places: NearbyPlace[] = results.map((result: {
+    interface GooglePlaceResult {
       place_id: string;
       name: string;
       vicinity: string;
       geometry?: { location?: { lat: number; lng: number } };
       opening_hours?: { open_now: boolean };
       rating?: number;
-    }) => {
-      const placeLat = result.geometry?.location?.lat;
-      const placeLng = result.geometry?.location?.lng;
-      const distanceKm = calculateDistance(latitude, longitude, placeLat, placeLng);
-      
-      return {
-        placeId: result.place_id,
-        name: result.name,
-        vicinity: result.vicinity,
-        latitude: placeLat,
-        longitude: placeLng,
-        distanceKm,
-        openNow: result.opening_hours?.open_now,
-        rating: result.rating,
-        category,
-      };
-    });
+    }
+
+    const places: NearbyPlace[] = (results as GooglePlaceResult[])
+      .filter((r) => r.geometry?.location?.lat && r.geometry?.location?.lng)
+      .map((result) => {
+        const placeLat = result.geometry!.location!.lat;
+        const placeLng = result.geometry!.location!.lng;
+        const distanceKm = calculateDistance(latitude, longitude, placeLat, placeLng);
+        
+        return {
+          placeId: result.place_id,
+          name: result.name,
+          vicinity: result.vicinity,
+          latitude: placeLat,
+          longitude: placeLng,
+          distanceKm,
+          openNow: result.opening_hours?.open_now,
+          rating: result.rating,
+          category,
+        };
+      });
 
     places.sort((a, b) => a.distanceKm - b.distanceKm);
 
@@ -121,47 +125,12 @@ export async function fetchNearbyServices(
     await Promise.all(detailPromises);
 
     if (places.length === 0) {
-      console.log('[ViaTerrena] Using MOCK DATA fallback (Billing not enabled on API key)');
-      return getMockPlaces(latitude, longitude, category);
+      console.log('[ViaTerrena] No places found for this category');
     }
 
     return places;
   } catch (error) {
     console.error('[ViaTerrena] fetchNearbyServices error', error);
-    return getMockPlaces(latitude, longitude, category);
+    return [];
   }
-}
-
-function getMockPlaces(lat: number, lng: number, category: ServiceCategory): NearbyPlace[] {
-  const mockNames: Record<ServiceCategory, string[]> = {
-    hospital: ['City General Hospital', 'Mercy Medical Center', 'Sunrise Clinic'],
-    ambulance: ['Rapid Response Ambulance', 'Citywide Paramedics', 'LifeLine EMS'],
-    police: ['Central Police Station', 'Metro Precinct 9', 'Highway Patrol Hub'],
-    towing: ['QuickTow Services', 'Roadside Assist Pros', 'Heavy Duty Towing'],
-    puncture_shop: ['Joe\'s Tire Repair', 'QuickFix Punctures', 'Wheel Align & Tire'],
-    showroom: ['AutoWorld Dealership', 'Premium Cars Showroom', 'City Motors'],
-    pharmacy: ['HealthPlus Pharmacy', 'Corner Drugstore', '24/7 Meds'],
-  };
-
-  const names = mockNames[category] || mockNames.hospital;
-  
-  return names.map((name, index) => {
-    // Generate slight coordinate offsets for mock distances
-    const mockLat = lat + (Math.random() - 0.5) * 0.02;
-    const mockLng = lng + (Math.random() - 0.5) * 0.02;
-    const distanceKm = calculateDistance(lat, lng, mockLat, mockLng);
-
-    return {
-      placeId: `mock_${category}_${index}`,
-      name,
-      vicinity: `123 Mock Street, ${name} Area`,
-      latitude: mockLat,
-      longitude: mockLng,
-      distanceKm,
-      phoneNumber: `+1 555 019${index}`,
-      openNow: true,
-      rating: 4.0 + (Math.random() * 0.9),
-      category,
-    };
-  }).sort((a, b) => a.distanceKm - b.distanceKm);
 }

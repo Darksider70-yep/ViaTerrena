@@ -23,10 +23,11 @@ const CATEGORIES_TO_FETCH: ServiceCategory[] = [
   'towing',
   'puncture_shop',
   'showroom',
+  'pharmacy',
 ];
 
 const CACHE_STALE_TIME = 30 * 60 * 1000; // 30 minutes
-const DISTANCE_THRESHOLD_KM = 5;
+const DISTANCE_THRESHOLD_KM = 1;
 
 export function useNearbyServices(radiusMeters: number = 10000): UseNearbyServicesResult {
   const {
