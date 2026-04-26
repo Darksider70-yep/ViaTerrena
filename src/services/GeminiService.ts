@@ -32,7 +32,9 @@ export async function getTriageResponse(
     return 'Service unavailable. Call 112 immediately.';
   }
 
-  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`;
+  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${geminiApiKey}`;
+
+
 
 
   const contents = messages.map(msg => ({
