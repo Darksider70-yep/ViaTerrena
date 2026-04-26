@@ -1,5 +1,10 @@
 import { Accelerometer } from 'expo-sensors';
-import { Subscription } from 'expo-sensors/build/Subscription';
+
+// Define a simple Subscription interface to avoid internal import errors
+interface Subscription {
+  remove: () => void;
+}
+
 
 // Tuning constants
 const CRASH_THRESHOLD_G = 3.5;       // G-force to trigger (3.5 = major impact)
