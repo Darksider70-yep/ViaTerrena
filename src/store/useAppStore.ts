@@ -82,6 +82,13 @@ export const useAppStore = create<AppState>()(
         personalContacts: state.personalContacts,
         lastSOSTrigger: state.lastSOSTrigger,
       }),
+      // Sanitize booleans on rehydration — AsyncStorage can cause type confusion
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          state.isDarkMode = state.isDarkMode === true;
+          state.isOnline = true; // always reset to true on boot
+        }
+      },
     }
   )
 );

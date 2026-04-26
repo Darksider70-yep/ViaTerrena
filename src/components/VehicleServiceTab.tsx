@@ -8,18 +8,19 @@ import { colors } from '../constants/colors';
 import { Ionicons } from '@expo/vector-icons';
 import { RootTabParamList } from '../navigation/RootNavigator';
 import { NearbyPlace } from '../services/placesService';
+import SkeletonCard from './SkeletonCard';
 
 interface VehicleServiceTabProps {
   category: 'towing' | 'puncture_shop' | 'showroom';
+  loading?: boolean;
 }
 
-const VehicleServiceTab: React.FC<VehicleServiceTabProps> = ({ category }) => {
+const VehicleServiceTab: React.FC<VehicleServiceTabProps> = ({ category, loading = false }) => {
   const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList>>();
   const { cachedNearby } = useAppStore();
   
   const services = cachedNearby[category] || [];
   
-  // Sort by distance if available
   const sortedServices = [...services].sort((a, b) => (a.distanceKm || 0) - (b.distanceKm || 0));
 
   const handleCall = useCallback((phone: string) => {
@@ -34,16 +35,23 @@ const VehicleServiceTab: React.FC<VehicleServiceTabProps> = ({ category }) => {
     if (url) Linking.openURL(url);
   }, []);
 
+  if (loading) {
+    return (
+      <View style={styles.listContent}>
+        {[1, 2, 3].map(i => <SkeletonCard key={i} height={100} style={{ marginBottom: 16 }} />)}
+      </View>
+    );
+  }
+
   if (services.length === 0) {
+    const label = category === 'puncture_shop' ? 'Tyre repair shops' : category + ' services';
     return (
       <View style={styles.emptyContainer}>
-        <Ionicons 
-          name={category === 'towing' ? 'car-outline' : category === 'puncture_shop' ? 'construct-outline' : 'business-outline'} 
-          size={64} 
-          color={colors.textHint} 
-        />
-        <Text style={styles.emptyTitle}>No {category.replace('_', ' ')} found</Text>
-        <Text style={styles.emptySub}>Open the Nearby tab to search and refresh services near you.</Text>
+        <Text style={styles.emptyEmoji}>🔍</Text>
+        <Text style={styles.emptyTitle}>No {label} found nearby</Text>
+        <Text style={styles.emptySub}>
+          Open the Nearby tab to fetch services for your current location.
+        </Text>
         <TouchableOpacity 
           style={styles.refreshBtn}
           onPress={() => navigation.navigate('Nearby')}
@@ -81,14 +89,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 40,
-    marginTop: 60,
+    marginTop: 40,
+  },
+  emptyEmoji: {
+    fontSize: 48,
+    marginBottom: 16,
   },
   emptyTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '800',
     color: colors.textPrimary,
-    marginTop: 20,
-    textTransform: 'capitalize',
+    marginTop: 10,
+    textAlign: 'center',
   },
   emptySub: {
     fontSize: 14,
@@ -96,6 +108,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 10,
     lineHeight: 20,
+    paddingHorizontal: 20,
   },
   refreshBtn: {
     marginTop: 24,

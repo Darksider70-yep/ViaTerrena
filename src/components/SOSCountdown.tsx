@@ -5,8 +5,8 @@ import {
   StyleSheet,
   Modal,
   TouchableOpacity,
-  SafeAreaView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
 interface SOSCountdownProps {
@@ -30,13 +30,13 @@ const SOSCountdown: React.FC<SOSCountdownProps> = ({
       setCount(3);
       timerRef.current = setInterval(() => {
         setCount((prev) => {
-          if (prev <= 1) {
-            clearInterval(timerRef.current!);
-            onComplete();
+          const next = prev - 1;
+          if (next <= 0) {
+            if (timerRef.current) clearInterval(timerRef.current);
             return 0;
           }
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          return prev - 1;
+          return next;
         });
       }, 1000);
     } else {
@@ -46,7 +46,14 @@ const SOSCountdown: React.FC<SOSCountdownProps> = ({
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [visible, onComplete]);
+  }, [visible]);
+
+  // Use a separate effect to trigger completion when count hits 0
+  useEffect(() => {
+    if (visible && count === 0) {
+      onComplete();
+    }
+  }, [count, visible, onComplete]);
 
   const handleCancel = () => {
     if (timerRef.current) clearInterval(timerRef.current);

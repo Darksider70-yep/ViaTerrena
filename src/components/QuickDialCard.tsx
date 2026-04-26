@@ -30,6 +30,8 @@ const QuickDialCard: React.FC<QuickDialCardProps> = ({ label, number, emoji, col
       ]}
       onPress={handlePress}
       activeOpacity={0.7}
+      accessibilityLabel={`Call ${label} — ${number}`}
+      accessibilityRole="button"
     >
       <View style={[styles.emojiCircle, { backgroundColor: color }]}>
         <Text style={styles.emojiText}>{emoji}</Text>

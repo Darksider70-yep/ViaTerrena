@@ -3,12 +3,12 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   FlatList,
   TouchableOpacity,
   Alert,
   StatusBar,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../constants/colors';
 import { useEmergencyContacts } from '../hooks/useEmergencyContacts';
@@ -111,7 +111,7 @@ const ContactsScreen: React.FC = () => {
 
       <View style={styles.footer}>
         <TouchableOpacity
-          style={[styles.addButton, contacts.length >= 5 && styles.disabledButton]}
+          style={[styles.addButton, contacts.length >= 5 ? styles.disabledButton : null]}
           onPress={handleAddPress}
           disabled={contacts.length >= 5}
         >

@@ -41,6 +41,8 @@ export const ServiceCard = React.memo(({
       ]}
       onPress={() => onPress(place)}
       activeOpacity={0.9}
+      accessibilityLabel={`${place.name}, ${place.vicinity}, ${formatDistance(place.distanceKm)} away`}
+      accessibilityRole="button"
     >
       <View style={styles.mainContent}>
         <View style={[styles.iconBox, { backgroundColor: catInfo.color + (isDarkMode ? '25' : '10') }]}>
@@ -58,7 +60,7 @@ export const ServiceCard = React.memo(({
           <Text style={[styles.address, { color: theme.textSecondary }]} numberOfLines={1}>
             {place.vicinity}
           </Text>
-
+ 
           <View style={styles.bottomMeta}>
             {place.openNow !== undefined && (
               <View style={[styles.statusTag, { backgroundColor: place.openNow ? colors.success + '15' : colors.danger + '15' }]}>
@@ -74,6 +76,8 @@ export const ServiceCard = React.memo(({
                 <TouchableOpacity
                   style={[styles.miniAction, { backgroundColor: colors.secondary + (isDarkMode ? '25' : '15') }]}
                   onPress={() => onCallPress(place.phoneNumber!)}
+                  accessibilityLabel={`Call ${place.name}`}
+                  accessibilityRole="button"
                 >
                   <Ionicons name="call" size={16} color={colors.secondary} />
                 </TouchableOpacity>
@@ -81,6 +85,8 @@ export const ServiceCard = React.memo(({
               <TouchableOpacity
                 style={[styles.miniAction, { backgroundColor: colors.warning + (isDarkMode ? '25' : '15') }]}
                 onPress={() => onDirectionsPress(place)}
+                accessibilityLabel={`Get directions to ${place.name}`}
+                accessibilityRole="button"
               >
                 <Ionicons name="navigate" size={16} color={colors.warning} />
               </TouchableOpacity>

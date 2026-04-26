@@ -144,6 +144,9 @@ const SOSButton: React.FC<SOSButtonProps> = ({
             borderRadius: size / 2,
           },
         ]}
+        accessibilityLabel="SOS Emergency Button — press to call emergency services"
+        accessibilityRole="button"
+        accessibilityHint="Starts a 3 second countdown before dialling emergency services"
       >
         <Text style={styles.text}>SOS</Text>
       </TouchableOpacity>

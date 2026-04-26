@@ -1,16 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   StatusBar,
+  Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import * as Haptics from 'expo-haptics';
 import { colors } from '../constants/colors';
 import { useAppStore } from '../store/useAppStore';
 import { getEmergencyNumbers } from '../services/emergencyNumbers';
@@ -18,21 +20,40 @@ import { EMERGENCY_EMOJI_MAP, EMERGENCY_COLOR_MAP } from '../constants/serviceCa
 import QuickDialCard from '../components/QuickDialCard';
 import EmergencyInfoCard from '../components/EmergencyInfoCard';
 import { COUNTRY_FLAGS, COUNTRY_NAMES } from '../utils/countryNames';
+import IncidentReporter from '../components/IncidentReporter';
+import IncidentCard from '../components/IncidentCard';
+import { useIncidentLog } from '../hooks/useIncidentLog';
 
 import { RootTabParamList } from '../navigation/RootNavigator';
 
 const HomeScreen: React.FC = () => {
-  const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList>>();
-  const { countryCode } = useAppStore();
+  const navigation = useNavigation<any>();
+  const { countryCode, userCoords } = useAppStore();
+  const { incidents, deleteIncident } = useIncidentLog();
+  const [reporterVisible, setReporterVisible] = useState(false);
+  
   const emergencyNumbers = getEmergencyNumbers(countryCode);
 
   const dialCards = Object.entries(emergencyNumbers).map(([key, number]) => ({
     key,
-    label: key.replace(/([A-Z])/g, ' $1'), // camelCase to Space Case
+    label: key.replace(/([A-Z])/g, ' $1'),
     number: number as string,
     emoji: EMERGENCY_EMOJI_MAP[key] ?? '📞',
     color: EMERGENCY_COLOR_MAP[key] ?? colors.info,
   }));
+
+  const handleReporterOpen = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setReporterVisible(true);
+  };
+
+  const handleDeleteIncident = (id: string) => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    Alert.alert('Delete Incident', 'Are you sure you want to remove this log?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => deleteIncident(id) },
+    ]);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -50,8 +71,13 @@ const HomeScreen: React.FC = () => {
         {/* SOS Shortcut Card */}
         <TouchableOpacity 
           style={styles.sosCard}
-          onPress={() => navigation.navigate('SOS')}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+            navigation.navigate('SOS');
+          }}
           activeOpacity={0.9}
+          accessibilityLabel="SOS Emergency Button shortcut"
+          accessibilityRole="button"
         >
           <View style={styles.sosIconCircle}>
             <Ionicons name="alert-circle" size={32} color="#E24B4A" />
@@ -86,6 +112,36 @@ const HomeScreen: React.FC = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Golden Hour</Text>
           <EmergencyInfoCard />
+          <TouchableOpacity 
+            style={styles.viewGuideBtn}
+            onPress={() => navigation.navigate('FirstAidGuide')}
+          >
+            <Text style={styles.viewGuideText}>View Full First Aid Guide →</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Recent Incidents */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Recent Incidents</Text>
+            {incidents.length > 0 && (
+              <Text style={styles.countBadge}>{incidents.length}</Text>
+            )}
+          </View>
+          <View style={styles.incidentList}>
+            {incidents.slice(0, 2).map((incident) => (
+              <IncidentCard 
+                key={incident.id} 
+                incident={incident} 
+                onDelete={handleDeleteIncident}
+              />
+            ))}
+            {incidents.length === 0 && (
+              <View style={styles.emptyIncidents}>
+                <Text style={styles.emptyIncidentsText}>No incidents logged yet</Text>
+              </View>
+            )}
+          </View>
         </View>
 
         {/* Quick Access Section */}
@@ -94,14 +150,20 @@ const HomeScreen: React.FC = () => {
           <View style={styles.accessRow}>
             <TouchableOpacity 
               style={[styles.accessBtn, { backgroundColor: '#F0F9FF' }]}
-              onPress={() => navigation.navigate('Nearby')}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                navigation.navigate('Nearby');
+              }}
             >
               <Ionicons name="map" size={24} color={colors.secondary} />
               <Text style={[styles.accessBtnText, { color: colors.secondary }]}>Nearby Services</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={[styles.accessBtn, { backgroundColor: '#FFF7ED' }]}
-              onPress={() => navigation.navigate('Vehicle')}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                navigation.navigate('Vehicle');
+              }}
             >
               <Ionicons name="car" size={24} color={colors.warning} />
               <Text style={[styles.accessBtnText, { color: colors.warning }]}>Vehicle Help</Text>
@@ -109,6 +171,23 @@ const HomeScreen: React.FC = () => {
           </View>
         </View>
       </ScrollView>
+
+      {/* Floating Action Button */}
+      <TouchableOpacity 
+        style={styles.fab} 
+        onPress={handleReporterOpen}
+        activeOpacity={0.8}
+        accessibilityLabel="Log a road incident"
+        accessibilityRole="button"
+      >
+        <Ionicons name="clipboard" size={28} color="#FFFFFF" />
+      </TouchableOpacity>
+
+      <IncidentReporter 
+        visible={reporterVisible} 
+        onClose={() => setReporterVisible(false)} 
+        coords={userCoords}
+      />
     </SafeAreaView>
   );
 };
@@ -146,7 +225,7 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
   scrollContent: {
-    paddingBottom: 40,
+    paddingBottom: 100,
   },
   sosCard: {
     flexDirection: 'row',
@@ -192,6 +271,8 @@ const styles = StyleSheet.create({
   sectionHeader: {
     paddingHorizontal: 24,
     marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   sectionTitle: {
     fontSize: 20,
@@ -205,11 +286,54 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: 4,
   },
+  countBadge: {
+    backgroundColor: colors.secondary,
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '800',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    overflow: 'hidden',
+    marginLeft: -16,
+    marginBottom: 14,
+  },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     paddingHorizontal: 24,
     justifyContent: 'space-between',
+  },
+  viewGuideBtn: {
+    marginHorizontal: 24,
+    marginTop: -10,
+    marginBottom: 10,
+    padding: 12,
+    backgroundColor: colors.background,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  viewGuideText: {
+    color: colors.secondary,
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  incidentList: {
+    paddingHorizontal: 24,
+  },
+  emptyIncidents: {
+    padding: 20,
+    backgroundColor: colors.background,
+    borderRadius: 16,
+    alignItems: 'center',
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  emptyIncidentsText: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    fontStyle: 'italic',
   },
   accessRow: {
     flexDirection: 'row',
@@ -229,6 +353,22 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginTop: 8,
     textAlign: 'center',
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#BA7517',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
 });
 

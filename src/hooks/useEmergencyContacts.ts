@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Haptics from 'expo-haptics';
 import { EmergencyContact } from '../services/SOSService';
+import { showToast } from '../utils/toast';
 
 const STORAGE_KEY = 'emergency_contacts';
 
@@ -48,7 +50,9 @@ export function useEmergencyContacts() {
     const updated = [...contacts, newContact];
     setContacts(updated);
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    console.log('[ViaTerrena][Contacts] Added contact:', newContact.name);
+    
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    showToast('Contact saved successfully');
   };
 
   const updateContact = async (id: string, updates: Partial<EmergencyContact>) => {
@@ -65,14 +69,18 @@ export function useEmergencyContacts() {
 
     setContacts(updated);
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    console.log('[ViaTerrena][Contacts] Updated contact:', id);
+    
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    showToast('Contact updated');
   };
 
   const deleteContact = async (id: string) => {
     const updated = contacts.filter((c) => c.id !== id);
     setContacts(updated);
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    console.log('[ViaTerrena][Contacts] Deleted contact:', id);
+    
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    showToast('Contact removed');
   };
 
   return {

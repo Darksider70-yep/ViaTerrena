@@ -1,1 +1,162 @@
-[]
+{
+  "version": "1.0",
+  "lastUpdated": "2025-01",
+  "categories": [
+    {
+      "id": "immediate",
+      "title": "Immediate Response",
+      "emoji": "🚨",
+      "color": "#E24B4A",
+      "steps": [
+        {
+          "id": "i1",
+          "title": "Ensure Scene Safety",
+          "summary": "Check for dangers before approaching",
+          "detail": "Before approaching any accident scene, scan for hazards: oncoming traffic, fuel leaks, fire, or unstable vehicles. Turn on your hazard lights and if safe, place warning triangles or flares 50–100 metres behind the scene. Do not become a second victim.",
+          "critical": true,
+          "doList": ["Switch on hazard lights", "Place warning triangles", "Check for fuel leaks or fire"],
+          "dontList": ["Rush into an unsafe scene", "Smoke near the vehicle", "Move the vehicle unless blocking traffic"]
+        },
+        {
+          "id": "i2",
+          "title": "Call Emergency Services",
+          "summary": "Call 112 immediately — stay on the line",
+          "detail": "Call the emergency number for your country immediately (112 is the universal number). Tell the operator: your exact location or nearest landmark, the number of vehicles involved, estimated number of injured persons, and any hazards present. Stay on the line — the operator will guide you.",
+          "critical": true,
+          "doList": ["State your location clearly", "Give number of casualties", "Stay on the line"],
+          "dontList": ["Hang up until told to", "Assume someone else has called"]
+        },
+        {
+          "id": "i3",
+          "title": "Assess Casualties",
+          "summary": "Check responsiveness before moving anyone",
+          "detail": "Approach each person carefully. Tap their shoulders firmly and shout 'Can you hear me?'. If unconscious but breathing, place in the recovery position. If not breathing normally, begin CPR. Do not move casualties unless they are in immediate danger from fire or water.",
+          "critical": true,
+          "doList": ["Check responsiveness by tapping shoulders", "Look for chest rise (breathing)", "Check for severe bleeding"],
+          "dontList": ["Move a casualty with a suspected spinal injury", "Remove crash helmets unless airway is blocked"]
+        }
+      ]
+    },
+    {
+      "id": "bleeding",
+      "title": "Controlling Bleeding",
+      "emoji": "🩸",
+      "color": "#C0392B",
+      "steps": [
+        {
+          "id": "b1",
+          "title": "Apply Direct Pressure",
+          "summary": "Press firmly with a clean cloth",
+          "detail": "Use a clean cloth, bandage, or clothing to apply firm, direct pressure to the wound. Press continuously for at least 10 minutes without lifting to check — lifting disrupts clot formation. If blood soaks through, add more material on top without removing the first layer.",
+          "critical": true,
+          "doList": ["Press firmly and continuously", "Add more material over the first", "Elevate the limb if possible"],
+          "dontList": ["Remove soaked bandages", "Apply a tourniquet unless bleeding is life-threatening and on a limb"]
+        },
+        {
+          "id": "b2",
+          "title": "Tourniquet (Last Resort)",
+          "summary": "Only for limb bleeding that cannot be controlled",
+          "detail": "A tourniquet is only appropriate for severe, uncontrolled bleeding on an arm or leg. Apply 5–8 cm above the wound, tighten until bleeding stops, and note the time of application. Improvise with a belt or strip of cloth and a stick to twist and tighten. Write the time on the person's forehead if possible.",
+          "critical": false,
+          "doList": ["Apply 5–8cm above the wound", "Tighten until bleeding stops", "Note the exact time applied"],
+          "dontList": ["Use a tourniquet on the neck, chest, or abdomen", "Remove the tourniquet once applied"]
+        }
+      ]
+    },
+    {
+      "id": "cpr",
+      "title": "CPR",
+      "emoji": "❤️",
+      "color": "#E24B4A",
+      "steps": [
+        {
+          "id": "c1",
+          "title": "Check for Breathing",
+          "summary": "Look, listen, and feel for 10 seconds",
+          "detail": "Tilt the head back gently and lift the chin to open the airway. Look for chest movement, listen for breath sounds, and feel for air on your cheek. Do this for no more than 10 seconds. If the person is not breathing normally, start CPR immediately.",
+          "critical": true,
+          "doList": ["Tilt head back, lift chin", "Check for 10 seconds only", "Begin CPR if no normal breathing"],
+          "dontList": ["Spend more than 10 seconds checking", "Begin CPR if the person is breathing normally"]
+        },
+        {
+          "id": "c2",
+          "title": "Chest Compressions",
+          "summary": "30 compressions, hard and fast",
+          "detail": "Place the heel of your hand on the centre of the chest (lower half of the breastbone). Place your other hand on top and interlock fingers. Compress the chest at least 5–6 cm deep at a rate of 100–120 per minute. Allow full chest recoil between compressions. Count aloud: 1-and-2-and-3...",
+          "critical": true,
+          "doList": ["Push hard: 5–6cm deep", "Push fast: 100–120 per minute", "Allow full chest recoil"],
+          "dontList": ["Lean on the chest between compressions", "Stop compressions for more than 10 seconds"]
+        },
+        {
+          "id": "c3",
+          "title": "Rescue Breaths (if trained)",
+          "summary": "2 breaths after every 30 compressions",
+          "detail": "If trained and willing, give 2 rescue breaths after every 30 compressions. Pinch the nose, seal your mouth over theirs, and breathe steadily for 1 second watching for chest rise. If untrained or unwilling, hands-only CPR (compressions only) is still highly effective. Continue until emergency services arrive.",
+          "critical": false,
+          "doList": ["Give 2 breaths after 30 compressions", "Watch for chest rise", "Continue until help arrives"],
+          "dontList": ["Stop CPR unless exhausted or a professional takes over", "Attempt rescue breaths if not trained"]
+        }
+      ]
+    },
+    {
+      "id": "shock",
+      "title": "Managing Shock",
+      "emoji": "🫀",
+      "color": "#8E44AD",
+      "steps": [
+        {
+          "id": "s1",
+          "title": "Recognise Shock",
+          "summary": "Pale, cold, rapid breathing — act quickly",
+          "detail": "Signs of shock include: pale, cold, clammy skin; rapid, weak pulse; fast, shallow breathing; confusion or anxiety; nausea. Shock is life-threatening and worsens rapidly without treatment. Call emergency services immediately if not already done.",
+          "critical": true,
+          "doList": ["Call 112 immediately", "Keep the person lying down", "Raise legs 30cm unless head, neck, or chest injury"],
+          "dontList": ["Give food or water", "Apply heat or hot water bottles", "Leave the person alone"]
+        },
+        {
+          "id": "s2",
+          "title": "Keep Warm and Still",
+          "summary": "Prevent heat loss and further injury",
+          "detail": "Cover the person with a blanket, coat, or any available material to retain body heat. Do not apply direct heat. Keep them lying still and reassure them calmly. Monitor breathing and pulse continuously until emergency services arrive.",
+          "critical": false,
+          "doList": ["Cover with blanket or coat", "Speak calmly and reassuringly", "Monitor breathing every 2 minutes"],
+          "dontList": ["Give alcohol", "Raise legs if head, neck, or spinal injury suspected"]
+        }
+      ]
+    },
+    {
+      "id": "spinal",
+      "title": "Spinal Injury",
+      "emoji": "🦴",
+      "color": "#2980B9",
+      "steps": [
+        {
+          "id": "sp1",
+          "title": "Do Not Move",
+          "summary": "Immobility is critical — movement can paralyse",
+          "detail": "If a spinal injury is suspected (high-speed impact, fall from height, unconscious casualty, complaint of neck or back pain, numbness or tingling in limbs), do not move the person. Keep them absolutely still. If conscious, tell them not to move their head or neck. Only move if in immediate, life-threatening danger.",
+          "critical": true,
+          "doList": ["Keep the person absolutely still", "Talk calmly to keep them conscious", "Support the head in the position found"],
+          "dontList": ["Twist or bend the neck", "Drag the person", "Remove a crash helmet unless airway is blocked"]
+        }
+      ]
+    },
+    {
+      "id": "burns",
+      "title": "Burns from Fire or Chemicals",
+      "emoji": "🔥",
+      "color": "#E67E22",
+      "steps": [
+        {
+          "id": "bu1",
+          "title": "Cool the Burn",
+          "summary": "Cool water for 20 minutes",
+          "detail": "Hold the burned area under cool (not cold) running water for at least 20 minutes. This reduces heat in the tissue and limits damage. Do not use ice, ice water, butter, toothpaste, or any cream. Remove jewellery and clothing near the burn unless stuck to the skin.",
+          "critical": true,
+          "doList": ["Cool with running water for 20 minutes", "Remove jewellery near the burn", "Cover loosely with cling film or a clean plastic bag"],
+          "dontList": ["Use ice or ice water", "Apply butter, cream, or toothpaste", "Burst blisters"]
+        }
+      ]
+    }
+  ]
+}

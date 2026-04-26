@@ -3,14 +3,15 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   ScrollView,
   Modal,
   FlatList,
   TextInput,
   Animated,
+  ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -24,6 +25,8 @@ import SOSCountdown from '../components/SOSCountdown';
 import { COUNTRY_NAMES, COUNTRY_FLAGS } from '../utils/countryNames';
 import emergencyNumbersData from '../data/emergencyNumbers.json';
 
+import * as Haptics from 'expo-haptics';
+import { showToast } from '../utils/toast';
 import { RootTabParamList } from '../navigation/RootNavigator';
 
 const SOSScreen: React.FC = () => {
@@ -49,6 +52,9 @@ const SOSScreen: React.FC = () => {
       countryCode,
       personalContacts: contacts,
     });
+    
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    showToast('Emergency services alerted', 'success');
     
     setSOSResult(result);
     startDismissTimer();
@@ -79,6 +85,15 @@ const SOSScreen: React.FC = () => {
   const filteredCountries = countries.filter((c) =>
     c.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  if (!userCoords) {
+    return (
+      <SafeAreaView style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" color={colors.sosBackground} />
+        <Text style={styles.loadingText}>Waiting for GPS lock...</Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -138,9 +153,9 @@ const SOSScreen: React.FC = () => {
                 <Text style={styles.avatarMiniText}>{c.avatarInitials}</Text>
               </View>
             ))}
-            {contacts.length === 0 && (
+            {contacts.length === 0 ? (
               <Text style={styles.noContactsText}>No personal contacts added</Text>
-            )}
+            ) : null}
           </View>
         </View>
       </ScrollView>
@@ -477,6 +492,16 @@ const styles = StyleSheet.create({
   rowNumber: {
     fontSize: 14,
     color: colors.textSecondary,
+  },
+  centered: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 15,
+    color: colors.textSecondary,
+    fontWeight: '600',
   },
 });
 

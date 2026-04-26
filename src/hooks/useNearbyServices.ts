@@ -1,18 +1,19 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppStore } from '../store/useAppStore';
 import { fetchNearbyServices, NearbyPlace, ServiceCategory } from '../services/placesService';
 import { calculateDistance } from '../utils/distance';
 
 interface UseNearbyServicesResult {
-  places: NearbyPlace[];           // filtered by selectedCategory
-  allPlaces: NearbyPlace[];        // all categories combined
+  places: NearbyPlace[];
+  allPlaces: NearbyPlace[];
   loading: boolean;
+  isRefreshing: boolean;
   error: string | null;
-  totalCount: number;              // total across all categories
-  refresh: () => void;             // manual re-fetch
-  isFromCache: boolean;            // true when serving offline cached data
-  locationMismatch: boolean;       // true if cached location > 5km from current
+  totalCount: number;
+  refresh: () => void;
+  isFromCache: boolean;
+  locationMismatch: boolean;
 }
 
 const CATEGORIES_TO_FETCH: ServiceCategory[] = [
@@ -25,6 +26,7 @@ const CATEGORIES_TO_FETCH: ServiceCategory[] = [
 ];
 
 const CACHE_STALE_TIME = 30 * 60 * 1000; // 30 minutes
+const DISTANCE_THRESHOLD_KM = 5;
 
 export function useNearbyServices(radiusMeters: number = 10000): UseNearbyServicesResult {
   const {
@@ -37,14 +39,18 @@ export function useNearbyServices(radiusMeters: number = 10000): UseNearbyServic
   } = useAppStore();
 
   const [loading, setLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isFromCache, setIsFromCache] = useState(false);
   const [locationMismatch, setLocationMismatch] = useState(false);
+  const lastCoordsRef = useRef<{ latitude: number; longitude: number } | null>(null);
 
-  const fetchAll = useCallback(async () => {
+  const fetchAll = useCallback(async (isSilent = false) => {
     if (!userCoords) return;
 
-    setLoading(true);
+    if (isSilent) setIsRefreshing(true);
+    else setLoading(true);
+    
     setError(null);
     setIsFromCache(false);
 
@@ -59,7 +65,6 @@ export function useNearbyServices(radiusMeters: number = 10000): UseNearbyServic
 
       const results = await Promise.all(fetchPromises);
       
-      // Update store and local cache
       const newCache: any = {};
       results.forEach((res, index) => {
         const cat = CATEGORIES_TO_FETCH[index];
@@ -67,17 +72,19 @@ export function useNearbyServices(radiusMeters: number = 10000): UseNearbyServic
         newCache[cat] = res;
       });
 
-      // Task 9: Custom cache strategy
       await AsyncStorage.setItem('nearby_cache', JSON.stringify({
         data: newCache,
         timestamp: Date.now(),
         coords: userCoords,
       }));
+      
+      lastCoordsRef.current = userCoords;
 
     } catch (err) {
       setError('Failed to fetch nearby services');
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   }, [userCoords, radiusMeters, setCachedNearby]);
 
@@ -92,26 +99,44 @@ export function useNearbyServices(radiusMeters: number = 10000): UseNearbyServic
         coords.latitude,
         coords.longitude
       );
-      if (dist > 5) {
-        setLocationMismatch(true);
-      } else {
-        setLocationMismatch(false);
-      }
+      setLocationMismatch(dist > DISTANCE_THRESHOLD_KM);
     }
   }, [userCoords]);
 
   useEffect(() => {
     if (!userCoords) return;
 
-    const isStale = !cacheTimestamp || (Date.now() - cacheTimestamp > CACHE_STALE_TIME);
+    const checkStale = async () => {
+      const cached = await AsyncStorage.getItem('nearby_cache');
+      let stale = true;
+      let distMismatch = false;
 
-    if (isOnline && (isStale || loading === false)) {
-       // Only auto-fetch if stale or if we haven't loaded yet
-       if (isStale) fetchAll();
-    } else if (!isOnline) {
-      loadFromCache();
-    }
-  }, [isOnline, userCoords, cacheTimestamp, fetchAll, loadFromCache]);
+      if (cached) {
+        const { timestamp, coords } = JSON.parse(cached);
+        const age = Date.now() - timestamp;
+        const dist = calculateDistance(
+          userCoords.latitude,
+          userCoords.longitude,
+          coords.latitude,
+          coords.longitude
+        );
+        stale = age > CACHE_STALE_TIME;
+        distMismatch = dist > DISTANCE_THRESHOLD_KM;
+      }
+
+      if (isOnline) {
+        if (stale || distMismatch) {
+          // Silent refresh if we already have some data, otherwise full loading
+          const hasData = Object.keys(cachedNearby).length > 0;
+          fetchAll(!hasData);
+        }
+      } else {
+        loadFromCache();
+      }
+    };
+
+    checkStale();
+  }, [isOnline, userCoords]);
 
   const allPlaces = useMemo(() => {
     return Object.values(cachedNearby).flat();
@@ -129,9 +154,10 @@ export function useNearbyServices(radiusMeters: number = 10000): UseNearbyServic
     places: filteredPlaces,
     allPlaces,
     loading,
+    isRefreshing,
     error,
     totalCount: allPlaces.length,
-    refresh: fetchAll,
+    refresh: () => fetchAll(false),
     isFromCache,
     locationMismatch,
   };

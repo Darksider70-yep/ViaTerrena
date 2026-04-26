@@ -6,11 +6,12 @@ import { useTheme } from '../hooks/useTheme';
 interface OfflineBannerProps {
   isFromCache: boolean;
   cacheTimestamp: number | null;
+  locationMismatch?: boolean;
 }
 
-export const OfflineBanner = ({ isFromCache, cacheTimestamp }: OfflineBannerProps) => {
+export const OfflineBanner = ({ isFromCache, cacheTimestamp, locationMismatch }: OfflineBannerProps) => {
   const isOnline = useAppStore((state) => state.isOnline);
-  const { theme, colors } = useTheme();
+  const { colors } = useTheme();
 
   if (isOnline) return null;
 
@@ -29,21 +30,25 @@ export const OfflineBanner = ({ isFromCache, cacheTimestamp }: OfflineBannerProp
       style={[
         styles.container, 
         { 
-          backgroundColor: 'rgba(255, 243, 205, 0.15)', 
-          borderColor: colors.warning + '50' 
+          backgroundColor: locationMismatch ? 'rgba(255, 0, 0, 0.05)' : 'rgba(255, 243, 205, 0.15)', 
+          borderColor: locationMismatch ? colors.danger + '50' : colors.warning + '50' 
         }
       ]}
       accessibilityRole="alert"
       accessibilityLiveRegion="assertive"
     >
       <View style={styles.content}>
-        <Text style={styles.icon}>📡</Text>
+        <Text style={styles.icon}>{locationMismatch ? '📍' : '📡'}</Text>
         <View style={styles.textContainer}>
-          <Text style={[styles.title, { color: colors.warning }]}>
-            {isFromCache ? "You're offline — showing cached results" : "You're offline"}
+          <Text style={[styles.title, { color: locationMismatch ? colors.danger : colors.warning }]}>
+            {locationMismatch 
+              ? "Showing results for a different location" 
+              : isFromCache ? "You're offline — showing cached results" : "You're offline"}
           </Text>
           {isFromCache && cacheTimestamp ? (
-            <Text style={[styles.subtitle, { color: colors.warning, opacity: 0.8 }]}>Last updated: {timeAgo}</Text>
+            <Text style={[styles.subtitle, { color: locationMismatch ? colors.danger : colors.warning, opacity: 0.8 }]}>
+              {locationMismatch ? "You've moved > 5km from cached area." : `Last updated: ${timeAgo}`}
+            </Text>
           ) : !isFromCache ? (
             <Text style={[styles.subtitle, { color: colors.warning, opacity: 0.8 }]}>No cached data — connect to find services</Text>
           ) : null}

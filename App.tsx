@@ -1,50 +1,68 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { View, ActivityIndicator, StatusBar } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { enableScreens } from 'react-native-screens';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import RootNavigator from './src/navigation/RootNavigator';
+import OnboardingScreen from './src/screens/OnboardingScreen';
 import { useLocation } from './src/hooks/useLocation';
 import { useNetworkStatus } from './src/hooks/useNetworkStatus';
-import { fetchNearbyServices } from './src/services/placesService';
+import { ToastHost } from './src/utils/toast';
 
 // Disable native screens to prevent RN 0.81 strict property casting crash
 enableScreens(false);
 
-function AppContent() {
-  const { loading: locLoading, countryCode, coords } = useLocation();
-  const { isOnline } = useNetworkStatus();
-
-  useEffect(() => {
-    if (!locLoading) {
-      console.log('[ViaTerrena] Ready. Country:', countryCode, 'Online:', isOnline);
-      
-      // Run the Day 1 Smoke Test if we have location and network
-      if (coords && isOnline) {
-        console.log('[ViaTerrena] Running Day 1 Smoke Test fetchNearbyServices...');
-        fetchNearbyServices(coords.latitude, coords.longitude, 'hospital')
-          .then(res => {
-            console.log(`[ViaTerrena] Places API Result Count: ${res.length}`);
-            if (res.length > 0) {
-              console.log('[ViaTerrena] First Place:', res[0].name, 'Dist:', res[0].distanceKm.toFixed(2), 'km');
-            }
-          })
-          .catch(err => console.error('[ViaTerrena] Places API Error:', err));
-      }
-    }
-  }, [locLoading, countryCode, isOnline, coords]);
+function AppContent({ onboardingSeen, setOnboardingSeen }: { 
+  onboardingSeen: boolean, 
+  setOnboardingSeen: (val: boolean) => void 
+}) {
+  useLocation();
+  useNetworkStatus();
 
   return (
     <NavigationContainer>
-      <RootNavigator />
+      <StatusBar barStyle="dark-content" />
+      {onboardingSeen ? (
+        <RootNavigator />
+      ) : (
+        <OnboardingScreen onComplete={() => setOnboardingSeen(true)} />
+      )}
+      <ToastHost />
     </NavigationContainer>
   );
 }
 
 export default function App() {
+  const [onboardingSeen, setOnboardingSeen] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    // One-time migration: wipe corrupt Zustand storage from pre-v2 builds
+    AsyncStorage.getItem('via-terrena-storage-version').then((version) => {
+      if (version !== '2') {
+        AsyncStorage.removeItem('via-terrena-storage').finally(() => {
+          AsyncStorage.setItem('via-terrena-storage-version', '2');
+        });
+      }
+    });
+
+    AsyncStorage.getItem('onboarding_seen').then((val) => {
+      setOnboardingSeen(val === 'true');
+    });
+  }, []);
+
+  if (onboardingSeen === null) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' }}>
+        <ActivityIndicator size="large" color="#E24B4A" />
+      </View>
+    );
+  }
+
   return (
     <SafeAreaProvider>
-      <AppContent />
+      <AppContent onboardingSeen={onboardingSeen} setOnboardingSeen={setOnboardingSeen} />
     </SafeAreaProvider>
   );
 }

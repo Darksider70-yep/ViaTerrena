@@ -11,6 +11,9 @@ import SOSScreen from '../screens/SOSScreen';
 import VehicleHelpScreen from '../screens/VehicleHelpScreen';
 import ContactsScreen from '../screens/ContactsScreen';
 
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import FirstAidGuideScreen from '../screens/FirstAidGuideScreen';
+
 export type RootTabParamList = {
   Home: undefined;
   Nearby: undefined;
@@ -19,10 +22,23 @@ export type RootTabParamList = {
   Contacts: undefined;
 };
 
+export type HomeStackParamList = {
+  HomeMain: undefined;
+  FirstAidGuide: undefined;
+};
+
 const Tab = createBottomTabNavigator<RootTabParamList>();
+const Stack = createNativeStackNavigator<HomeStackParamList>();
+
+const HomeStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="HomeMain" component={HomeScreen} />
+    <Stack.Screen name="FirstAidGuide" component={FirstAidGuideScreen} />
+  </Stack.Navigator>
+);
 
 export default function RootNavigator() {
-  const { theme, colors, isDarkMode } = useTheme();
+  const { theme, colors } = useTheme();
 
   const light = () => {
     if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -48,7 +64,7 @@ export default function RootNavigator() {
     >
       <Tab.Screen
         name="Home"
-        component={HomeScreen}
+        component={HomeStack}
         listeners={{ tabPress: light }}
         options={{
           tabBarIcon: ({ color, focused }) => (

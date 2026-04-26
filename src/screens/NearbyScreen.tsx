@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,26 +12,25 @@ import {
   Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import MapView, { Marker, Callout } from 'react-native-maps';
+import MapView from 'react-native-maps';
 import { useAppStore } from '../store/useAppStore';
 import { useNearbyServices } from '../hooks/useNearbyServices';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import { SERVICE_CATEGORIES } from '../constants/serviceCategories';
 import { CategoryPill } from '../components/CategoryPill';
-import { ServiceCard } from '../components/ServiceCard';
 import { OfflineBanner } from '../components/OfflineBanner';
 import { ResultsCountBadge } from '../components/ResultsCountBadge';
 import { NearbyPlace } from '../services/placesService';
 import { useTheme } from '../hooks/useTheme';
+import { CustomMapView } from '../components/MapView';
+import { ServiceListItem } from '../components/ServiceListItem';
+import SkeletonCard from '../components/SkeletonCard';
 
 const RADIUS_OPTIONS = [
   { label: '5km', value: 5000 },
   { label: '10km', value: 10000 },
   { label: '25km', value: 25000 },
 ];
-
-import { CustomMapView } from '../components/MapView';
-import { ServiceListItem } from '../components/ServiceListItem';
 
 export default function NearbyScreen() {
   const { userCoords, selectedCategory, setSelectedCategory, cacheTimestamp } = useAppStore();
@@ -44,8 +43,10 @@ export default function NearbyScreen() {
   const {
     places,
     loading,
+    isRefreshing,
     refresh,
     isFromCache,
+    locationMismatch,
     totalCount,
   } = useNearbyServices(radiusMeters);
 
@@ -104,8 +105,10 @@ export default function NearbyScreen() {
               onPress={() => setRadiusMeters(opt.value)}
               style={[
                 styles.radiusBtn,
-                radiusMeters === opt.value && [styles.radiusBtnActive, { backgroundColor: theme.surface }],
+                radiusMeters === opt.value ? [styles.radiusBtnActive, { backgroundColor: theme.surface }] : null,
               ]}
+              accessibilityLabel={`Set radius to ${opt.label}`}
+              accessibilityRole="button"
             >
               <Text style={[
                 styles.radiusText,
@@ -161,7 +164,11 @@ export default function NearbyScreen() {
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]} edges={['top']}>
       {renderHeader()}
       
-      <OfflineBanner isFromCache={isFromCache} cacheTimestamp={cacheTimestamp} />
+      <OfflineBanner 
+        isFromCache={isFromCache} 
+        cacheTimestamp={cacheTimestamp} 
+        locationMismatch={locationMismatch}
+      />
       
       <View style={[styles.mapContainer, { backgroundColor: theme.background }]}>
         <CustomMapView
@@ -179,16 +186,24 @@ export default function NearbyScreen() {
         />
         <View style={styles.badgeWrapper}>
           <ResultsCountBadge totalCount={totalCount} loading={loading} />
+          {isRefreshing && (
+            <View style={styles.refreshBadge}>
+              <ActivityIndicator size="small" color={colors.secondary} />
+              <Text style={styles.refreshText}>Refreshing...</Text>
+            </View>
+          )}
         </View>
       </View>
 
       <FlatList
         ref={listRef}
-        data={places}
-        keyExtractor={(item) => item.placeId}
-        renderItem={({ item }) => (
+        data={loading ? [1, 2, 3, 4, 5] : places}
+        keyExtractor={(item, index) => loading ? `skeleton-${index}` : (item as NearbyPlace).placeId}
+        renderItem={({ item }) => loading ? (
+          <SkeletonCard height={88} style={{ marginBottom: 12 }} />
+        ) : (
           <ServiceListItem
-            place={item}
+            place={item as NearbyPlace}
             onCallPress={handleCall}
             onDirectionsPress={handleDirections}
             highlightedId={highlightedId}
@@ -214,13 +229,17 @@ export default function NearbyScreen() {
               <Text style={styles.emptyEmoji}>🔍</Text>
               <Text style={[styles.emptyTitle, { color: theme.textPrimary }]}>No services found nearby</Text>
               <Text style={[styles.emptySub, { color: theme.textSecondary }]}>Try increasing the search radius</Text>
-              <TouchableOpacity style={[styles.retryBtn, { backgroundColor: colors.primary }]} onPress={refresh}>
+              <TouchableOpacity 
+                style={[styles.retryBtn, { backgroundColor: colors.primary }]} 
+                onPress={refresh}
+                accessibilityLabel="Retry search"
+                accessibilityRole="button"
+              >
                 <Text style={styles.retryText}>Retry</Text>
               </TouchableOpacity>
             </View>
           ) : null
         }
-        ListFooterComponent={loading ? <ActivityIndicator style={{ margin: 20 }} color={colors.primary} /> : null}
       />
     </SafeAreaView>
   );
@@ -286,9 +305,31 @@ const styles = StyleSheet.create({
   },
   badgeWrapper: {
     position: 'absolute',
-    top: 12, // Move to top to avoid overlapping lake text
+    top: 12,
     left: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     zIndex: 100,
+  },
+  refreshBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  refreshText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#BA7517',
+    marginLeft: 6,
   },
   listContent: {
     padding: 16,

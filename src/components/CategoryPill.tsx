@@ -1,5 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { useTheme } from '../hooks/useTheme';
 import { ServiceCategory } from '../services/placesService';
 
@@ -32,9 +33,14 @@ export const CategoryPill = ({
     ? (isDarkMode ? '#0F172A' : '#FFFFFF')
     : '#FFFFFF';
 
+  const handlePress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onPress();
+  };
+
   return (
     <TouchableOpacity
-      onPress={onPress}
+      onPress={handlePress}
       activeOpacity={0.8}
       style={[
         styles.pill,
@@ -42,17 +48,20 @@ export const CategoryPill = ({
           ? { backgroundColor: selectedBg, elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 }
           : { backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border },
       ]}
+      accessibilityLabel={`${label} filter — ${count !== undefined ? count : ''} services found`}
+      accessibilityRole="tab"
+      accessibilityState={{ selected: isSelected }}
     >
       <Text style={styles.emoji}>{emoji}</Text>
       <Text style={[styles.label, { color: isSelected ? selectedText : theme.textSecondary }]}>{label}</Text>
       
-      {count !== undefined && (
+      {count !== undefined ? (
         <View style={[styles.badge, isSelected ? { backgroundColor: isDarkMode ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.2)' } : { backgroundColor: theme.divider }]}>
           <Text style={[styles.badgeText, isSelected ? { color: selectedText } : { color: theme.textPrimary }]}>
             {count}
           </Text>
         </View>
-      )}
+      ) : null}
     </TouchableOpacity>
   );
 };

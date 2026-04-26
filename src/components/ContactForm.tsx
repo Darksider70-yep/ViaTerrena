@@ -125,7 +125,7 @@ const ContactForm: React.FC<ContactFormProps> = ({
               </View>
 
               <TouchableOpacity
-                style={[styles.saveButton, isSubmitting && styles.disabledButton]}
+                style={[styles.saveButton, isSubmitting ? styles.disabledButton : null]}
                 onPress={handleSave}
                 disabled={isSubmitting}
               >
