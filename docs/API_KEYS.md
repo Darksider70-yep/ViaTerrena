@@ -32,5 +32,22 @@ eas secret:create --name GOOGLE_PLACES_API_KEY --value "your_key_here" --type st
 
 Once added, EAS will inject this key into the build process, allowing `app.config.js` to read it and configure the native Google Maps SDK for Android.
 
+## 🤖 Obtaining a Google Gemini API Key
+
+ViaTerrena uses Gemini 2.0 Flash for the AI Triage Assistant.
+
+1. Go to [Google AI Studio](https://aistudio.google.com/app/apikey).
+2. Sign in with your Google account.
+3. Click **Create API Key**.
+4. Copy the key and add it to your `.env` file:
+   ```bash
+   GEMINI_API_KEY=your_gemini_api_key_here
+   ```
+5. For cloud builds, add it as an EAS Secret:
+   ```bash
+   eas secret:create --name GEMINI_API_KEY --value "your_key_here" --type string
+   ```
+
+
 ## 🛡 Security
 Never commit your `.env` file to version control. The `.gitignore` has been pre-configured to ignore `.env` files.

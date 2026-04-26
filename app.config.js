@@ -14,7 +14,9 @@ module.exports = ({ config }) => {
     extra: {
       ...config.extra,
       googlePlacesApiKey: process.env.GOOGLE_PLACES_API_KEY || "",
+      geminiApiKey: process.env.GEMINI_API_KEY || "",
     },
+
   };
 };
 

@@ -88,6 +88,28 @@ const HomeScreen: React.FC = () => {
           </View>
           <Ionicons name="chevron-forward" size={24} color={colors.primary} />
         </TouchableOpacity>
+        
+        {/* AI Triage Card */}
+        <TouchableOpacity 
+          style={styles.triageCard}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            navigation.navigate('Triage');
+          }}
+          activeOpacity={0.9}
+        >
+          <View style={styles.triageIconContainer}>
+            <Text style={styles.triageIcon}>🩺</Text>
+          </View>
+          <View style={styles.triageTextContainer}>
+            <Text style={styles.triageTitle}>AI Triage Assistant</Text>
+            <Text style={styles.triageSubtitle}>Get immediate first-aid guidance</Text>
+          </View>
+          <View style={styles.triageBadge}>
+            <Text style={styles.triageBadgeText}>AI</Text>
+          </View>
+        </TouchableOpacity>
+
 
         {/* Quick Dial Grid */}
         <View style={styles.section}>
@@ -264,7 +286,55 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: 2,
   },
+  triageCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0FDF4',
+    marginHorizontal: 24,
+    marginBottom: 24,
+    padding: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#86EFAC',
+  },
+  triageIconContainer: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#DCFCE7',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  triageIcon: {
+    fontSize: 24,
+  },
+  triageTextContainer: {
+    flex: 1,
+    marginLeft: 16,
+  },
+  triageTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: colors.textPrimary,
+  },
+  triageSubtitle: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  triageBadge: {
+    backgroundColor: '#86EFAC',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  triageBadgeText: {
+    fontSize: 10,
+    fontWeight: '900',
+    color: '#166534',
+  },
   section: {
+
     marginTop: 12,
   },
   sectionHeader: {

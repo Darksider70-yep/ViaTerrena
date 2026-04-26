@@ -13,6 +13,8 @@ import ContactsScreen from '../screens/ContactsScreen';
 
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import FirstAidGuideScreen from '../screens/FirstAidGuideScreen';
+import TriageScreen from '../screens/TriageScreen';
+
 
 export type RootTabParamList = {
   Home: undefined;
@@ -25,7 +27,9 @@ export type RootTabParamList = {
 export type HomeStackParamList = {
   HomeMain: undefined;
   FirstAidGuide: undefined;
+  Triage: undefined;
 };
+
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const Stack = createNativeStackNavigator<HomeStackParamList>();
@@ -34,7 +38,9 @@ const HomeStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="HomeMain" component={HomeScreen} />
     <Stack.Screen name="FirstAidGuide" component={FirstAidGuideScreen} />
+    <Stack.Screen name="Triage" component={TriageScreen} />
   </Stack.Navigator>
+
 );
 
 export default function RootNavigator() {
