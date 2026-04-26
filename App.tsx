@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, ActivityIndicator, StatusBar } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import { View, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { enableScreens } from 'react-native-screens';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import RootNavigator from './src/navigation/RootNavigator';
@@ -10,9 +10,6 @@ import OnboardingScreen from './src/screens/OnboardingScreen';
 import { useLocation } from './src/hooks/useLocation';
 import { useNetworkStatus } from './src/hooks/useNetworkStatus';
 import { ToastHost } from './src/utils/toast';
-
-// Disable native screens to prevent RN 0.81 strict property casting crash
-enableScreens(false);
 
 function AppContent({ onboardingSeen, setOnboardingSeen }: { 
   onboardingSeen: boolean, 
@@ -23,7 +20,7 @@ function AppContent({ onboardingSeen, setOnboardingSeen }: {
 
   return (
     <NavigationContainer>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar style="dark" />
       {onboardingSeen ? (
         <RootNavigator />
       ) : (
@@ -35,24 +32,33 @@ function AppContent({ onboardingSeen, setOnboardingSeen }: {
 }
 
 export default function App() {
-  const [onboardingSeen, setOnboardingSeen] = useState<boolean | null>(null);
+  const [onboardingSeen, setOnboardingSeen] = useState<boolean>(false);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    // One-time migration: wipe corrupt Zustand storage from pre-v2 builds
-    AsyncStorage.getItem('via-terrena-storage-version').then((version) => {
-      if (version !== '2') {
-        AsyncStorage.removeItem('via-terrena-storage').finally(() => {
-          AsyncStorage.setItem('via-terrena-storage-version', '2');
-        });
-      }
-    });
+    const init = async () => {
+      try {
+        const version = await AsyncStorage.getItem('via-terrena-storage-version');
+        if (version !== '4') {
+          await AsyncStorage.removeItem('via-terrena-storage');
+          await AsyncStorage.setItem('via-terrena-storage-version', '4');
+        }
 
-    AsyncStorage.getItem('onboarding_seen').then((val) => {
-      setOnboardingSeen(val === 'true');
-    });
+        const seen = await AsyncStorage.getItem('onboarding_seen');
+        if (seen === 'true') {
+          setOnboardingSeen(true);
+        }
+      } catch (e) {
+        console.warn('Init error', e);
+      } finally {
+        setHydrated(true);
+      }
+    };
+
+    init();
   }, []);
 
-  if (onboardingSeen === null) {
+  if (!hydrated) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' }}>
         <ActivityIndicator size="large" color="#E24B4A" />
