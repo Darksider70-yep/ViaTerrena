@@ -15,8 +15,8 @@ function AppContent({ onboardingSeen, setOnboardingSeen }: {
   onboardingSeen: boolean, 
   setOnboardingSeen: (val: boolean) => void 
 }) {
-  // useLocation();
-  // useNetworkStatus();
+  useLocation();
+  useNetworkStatus();
 
   return (
     <NavigationContainer>
@@ -36,11 +36,26 @@ export default function App() {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    // Extreme isolation: bypass AsyncStorage entirely to test boot stability
-    const timer = setTimeout(() => {
-      setHydrated(true);
-    }, 500);
-    return () => clearTimeout(timer);
+    const init = async () => {
+      try {
+        const version = await AsyncStorage.getItem('via-terrena-storage-version');
+        if (version !== '7') {
+          await AsyncStorage.removeItem('via-terrena-storage');
+          await AsyncStorage.setItem('via-terrena-storage-version', '7');
+        }
+
+        const seen = await AsyncStorage.getItem('onboarding_seen');
+        if (seen === 'true') {
+          setOnboardingSeen(true);
+        }
+      } catch (e) {
+        console.warn('Init error', e);
+      } finally {
+        setHydrated(true);
+      }
+    };
+
+    init();
   }, []);
 
   if (!hydrated) {

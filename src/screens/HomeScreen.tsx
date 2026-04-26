@@ -111,7 +111,7 @@ const HomeScreen: React.FC = () => {
         {/* Golden Hour Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Golden Hour</Text>
-          {/* <EmergencyInfoCard /> */}
+          <EmergencyInfoCard />
           <TouchableOpacity 
             style={styles.viewGuideBtn}
             onPress={() => navigation.navigate('FirstAidGuide')}
@@ -182,13 +182,11 @@ const HomeScreen: React.FC = () => {
         <Ionicons name="clipboard" size={28} color="#FFFFFF" />
       </TouchableOpacity>
 
-      {/* 
       <IncidentReporter 
         visible={reporterVisible} 
         onClose={() => setReporterVisible(false)} 
         coords={userCoords}
       />
-      */}
     </SafeAreaView>
   );
 };
