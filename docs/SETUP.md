@@ -31,12 +31,19 @@ Once the server starts, you can:
 - Press **`i`** for iOS simulator.
 - Scan the **QR Code** with the Expo Go app to run it on a physical device.
 
-### Type Checking
-To ensure type safety across the project:
-```bash
-npx tsc --noEmit
-```
+### Cloud Builds (EAS)
+To build an installable APK or AAB:
+1. **Login to EAS**: `eas login`
+2. **Configure Secrets**:
+   ```bash
+   eas secret:create --name GOOGLE_PLACES_API_KEY --value "your_key" --type string
+   ```
+3. **Build**:
+   - For APK: `eas build --platform android --profile preview`
+   - For AAB: `eas build --platform android --profile production`
 
 ## ⚠️ Known Issues & Solutions
+- **Nearby Screen Crash**: If the app crashes when clicking "Nearby" on Android, ensure the `GOOGLE_PLACES_API_KEY` is correctly set in EAS Secrets and rebuild the app.
 - **Location Denied**: If location permissions are denied, the app will show an error banner. Reset app permissions in your phone settings to retry.
 - **API Key Error**: Ensure the Google Places API Key has both "Nearby Search" and "Place Details" permissions enabled in the Google Cloud Console.
+

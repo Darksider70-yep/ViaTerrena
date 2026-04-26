@@ -53,17 +53,21 @@ Enable these APIs in Google Cloud Console:
 - Geocoding API
 
 ## Build
+ 
+ ```bash
+ # Development
+ npx expo start
+ 
++# Set EAS Secrets (Required for Cloud Builds)
++eas secret:create --name GOOGLE_PLACES_API_KEY --value "your_key" --type string
++
+ # Android APK
+ eas build --platform android --profile preview
+ 
+ # iOS
+ eas build --platform ios --profile preview
+ ```
 
-```bash
-# Development
-npx expo start
-
-# Android APK
-eas build --platform android --profile preview
-
-# iOS
-eas build --platform ios --profile preview
-```
 
 ## Evaluation criteria
 
