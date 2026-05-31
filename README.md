@@ -95,6 +95,16 @@ Egypt, Saudi Arabia, UAE, Turkey, Russia, Indonesia, Pakistan, Bangladesh,
 Philippines, Malaysia, Singapore, Thailand, New Zealand, Netherlands,
 Sweden, Norway, Switzerland, Portugal, Greece, Poland + DEFAULT (112)
 
+## Documentation
+
+For a comprehensive breakdown of all features, their life-saving importance, technical details, and core innovations in pitch format, see the [Master Features & Pitch Guide](docs/MASTER.md).
+
+For additional technical details:
+- [Architecture & Design](docs/ARCHITECTURE.md)
+- [Core Services](docs/SERVICES.md)
+- [API Configuration](docs/API_KEYS.md)
+- [Setup & Configuration](docs/SETUP.md)
+
 ## Project structure
 
 ```

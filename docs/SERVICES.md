@@ -1,6 +1,6 @@
 # Core Services Documentation
 
-ViaTerrena relies on three main service engines to provide real-time assistance.
+ViaTerrena relies on seven core service engines to provide real-time assistance, offline capability, and impact tracking.
 
 ## 1. Location Service (`LocationService.ts`)
 Handles interaction with the device's GPS hardware via `expo-location`.
@@ -29,8 +29,21 @@ Powered by Google Gemini 2.0 Flash to provide immediate medical guidance.
 
 ## 5. Crash Detection Service (`CrashDetectionService.ts`)
 Uses the device accelerometer to automatically detect high-impact road accidents.
-- **Physics Algorithm**: Monitors total G-force (√(x² + y² + z²)). A crash is triggered if force exceeds 2.5G for consecutive readings.
+- **Physics Algorithm**: Monitors total G-force (√(x² + y² + z²)). A crash is triggered if force exceeds 3.5G for consecutive readings.
 - **Auto-SOS Flow**: Automatically triggers a 10-second "I'm Okay" cancel window before firing the full SOS sequence.
 - **Background Support**: Runs while the app is in the foreground to provide continuous protection during travel.
+
+## 6. SOS Service (`SOSService.ts`)
+Orchestrates emergency alert distribution across cellular, SMS, and messaging networks.
+- **Auto-Dialing**: Invokes native device dialer utilizing `Linking.openURL('tel:<number>')`.
+- **SMS Broadcasting**: Parallel dispatch of emergency messages to up to 5 user-defined emergency contacts with active GPS coordinate maps links using `expo-sms`.
+- **WhatsApp Fallback**: Pre-formats and deep-links emergency details to WhatsApp as a supplementary notification path.
+
+## 7. Persistence & State Store (`useAppStore.ts`)
+Lightweight Zustand-based state store with AsyncStorage mapping.
+- **State Synchronization**: Automatically saves emergency contacts, incident reports, theme settings, and nearby service API cache.
+- **Offline Cache Hydration**: Restores cached values instantly on startup, allowing the app to render nearby map markers and services even with zero cellular signal.
+- **Network Status Listener**: Evaluates device connectivity and triggers offline fallback states dynamically.
+
 
 
