@@ -5,6 +5,9 @@
 Emergency road assistance platform providing instant access to life-saving
 services during road accidents. Built for the RoadSoS challenge.
 
+## APK
+> https://github.com/Darksider70-yep/ViaTerrena/releases/tag/ver1.1.0
+
 ## Features
 
 - **8 service categories**: hospitals, ambulance, police, towing, tyre repair, showrooms, pharmacies
